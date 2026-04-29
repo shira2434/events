@@ -20,7 +20,10 @@ export default function ChatPage() {
     setConversations(r.data);
     if (targetId && targetId !== 'undefined') {
       const conv = r.data.find(c => c.OtherUserId === +targetId);
-      if (conv) setTargetEmail(conv.Email);
+      if (conv) {
+        setTargetEmail(conv.Email);
+        localStorage.setItem(`chat_name_${targetId}`, conv.Email);
+      }
     }
     return r.data;
   };
@@ -31,17 +34,7 @@ export default function ChatPage() {
     if (!targetId || targetId === 'undefined') return;
     window.scrollTo(0, 0);
     api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
-    api.get('/chat').then(r => {
-      setConversations(r.data);
-      const conv = r.data.find(c => c.OtherUserId === +targetId);
-      if (conv) setTargetEmail(conv.Email);
-      else {
-        // אם אין שיחה עדיין, טען את האימייל לפי user ID
-        api.get(`/chat/user/${targetId}`).then(p => {
-          if (p.data?.Email) setTargetEmail(p.data.Email);
-        }).catch(() => {});
-      }
-    });
+    loadConversations();
   }, [targetId]); // eslint-disable-line
 
   // גלילה לתחתית תמיד
