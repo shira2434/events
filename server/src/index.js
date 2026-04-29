@@ -17,7 +17,7 @@ app.use('/api/chat', require('./routes/chat'));
 
 // 2. Production Setup
 if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(__dirname, '../../client/build');
+ const buildPath = path.resolve(__dirname, '..', '..', 'client', 'build');
   
   // הגשת קבצים סטטיים
   app.use(express.static(buildPath));
