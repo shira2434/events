@@ -12,7 +12,20 @@ export default function ChatPage() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [otherTyping, setOtherTyping] = useState(false);
-  const typingTimeoutRef = useRef(null);
+  const prevMessageCount = useRef(0);
+
+  const playSound = () => {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.3);
+  };
   const messagesRef = useRef();
   const imageInputRef = useRef();
   const navigate = useNavigate();
@@ -45,7 +58,15 @@ export default function ChatPage() {
     });
     // polling כל 3 שניות להודעות חדשות
     const interval = setInterval(() => {
-      api.get(`/chat/${targetId}`).then(r => setMessages(r.data)).catch(() => {});
+      api.get(`/chat/${targetId}`).then(r => {
+        setMessages(prev => {
+          // צליל רק אם הגיעו הודעות חדשות מהצד השני
+          const newMsgs = r.data.filter(m => m.SenderId !== myId);
+          if (newMsgs.length > prevMessageCount.current) playSound();
+          prevMessageCount.current = newMsgs.length;
+          return r.data;
+        });
+      }).catch(() => {});
       loadConversations();
     }, 3000);
     return () => clearInterval(interval);
