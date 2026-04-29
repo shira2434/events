@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [isNew, setIsNew] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef();
 
   useEffect(() => {
@@ -50,11 +51,24 @@ export default function DashboardPage() {
     setFiles([]);
     setPreviews([]);
     setUploading(false);
-    alert('✅ הקבצים הועלו בהצלחה!');
+    setUploadSuccess(true);
+    setTimeout(() => setUploadSuccess(false), 3000);
   };
 
   return (
     <div className="dashboard">
+      {uploadSuccess && (
+        <div className="popup-overlay" onClick={() => setUploadSuccess(false)}>
+          <div className="popup-box" onClick={e => e.stopPropagation()}>
+            <div className="popup-icon">✅</div>
+            <h3>הקבצים הועלו בהצלחה!</h3>
+            <p>התמונות נוספו לתיק העבודות שלך</p>
+            <div className="popup-btns">
+              <button className="popup-cancel" onClick={() => setUploadSuccess(false)}>סגור</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="dashboard-header">
         <button className="back-btn" onClick={() => navigate(-1)}>← חזרה</button>
         <h1>⚙️ לוח בקרה</h1>
@@ -107,6 +121,9 @@ export default function DashboardPage() {
 
       <section className="dashboard-section">
         <h2>🖼️ תיק עבודות</h2>
+        {isNew ? (
+          <div className="new-provider-notice">⚠️ שמור תחילה את פרטי העסק למעלה ואז תוכל להעלות תמונות</div>
+        ) : (
         <form onSubmit={uploadFiles}>
           <div
             className={`upload-area ${dragOver ? 'drag-over' : ''}`}
@@ -153,6 +170,7 @@ export default function DashboardPage() {
             </button>
           )}
         </form>
+        )}
       </section>
     </div>
   );

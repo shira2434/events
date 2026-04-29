@@ -1,8 +1,10 @@
 const express = require('express');
+const multer = require('multer');
 const { pool } = require('../db/db');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 router.get('/user/:userId', authMiddleware, async (req, res) => {
   try {
@@ -32,7 +34,6 @@ router.get('/', authMiddleware, async (req, res) => {
       OtherUserId: r.OtherUserId, Email: r.Email, UnreadCount: parseInt(r.UnreadCount) || 0
     })));
   } catch (err) {
-    console.error('GET /chat error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
@@ -45,17 +46,18 @@ router.get('/:targetId', authMiddleware, async (req, res) => {
       ORDER BY SentAt ASC
     `, [req.user.id, req.params.targetId]);
 
+    // סמן כנקרא רק הודעות שנשלחו אלי
     await pool.query(
-      'UPDATE ChatMessages SET IsRead = true WHERE ReceiverId = $1 AND SenderId = $2',
+      'UPDATE ChatMessages SET IsRead = true WHERE ReceiverId = $1 AND SenderId = $2 AND IsRead = false',
       [req.user.id, req.params.targetId]
     );
 
     res.json(result.rows.map(m => ({
       Id: m.id, SenderId: m.senderid, ReceiverId: m.receiverid,
-      Content: m.content, IsRead: m.isread, SentAt: m.sentat
+      Content: m.content, IsRead: m.isread, SentAt: m.sentat,
+      ImageData: m.imagedata || null
     })));
   } catch (err) {
-    console.error('GET /chat/:targetId error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
@@ -70,7 +72,23 @@ router.post('/', authMiddleware, async (req, res) => {
     const m = result.rows[0];
     res.status(201).json({ Id: m.id, SenderId: m.senderid, ReceiverId: m.receiverid, Content: m.content, SentAt: m.sentat });
   } catch (err) {
-    console.error('POST /chat error:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// שליחת תמונה
+router.post('/image', authMiddleware, upload.single('image'), async (req, res) => {
+  const { receiverId } = req.body;
+  try {
+    const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    // שמור את התמונה כ-content עם prefix מיוחד
+    const result = await pool.query(
+      'INSERT INTO ChatMessages (SenderId, ReceiverId, Content) VALUES ($1, $2, $3) RETURNING *',
+      [req.user.id, receiverId, `__IMAGE__${dataUrl}`]
+    );
+    const m = result.rows[0];
+    res.status(201).json({ Id: m.id, SenderId: m.senderid, ReceiverId: m.receiverid, Content: m.content, SentAt: m.sentat });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });

@@ -9,8 +9,10 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
   const messagesRef = useRef();
+  const imageInputRef = useRef();
   const navigate = useNavigate();
 
   const getName = (id) => localStorage.getItem(`chat_name_${id}`) || '';
@@ -30,8 +32,11 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!targetId || targetId === 'undefined') return;
-    api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
-    loadConversations();
+    api.get(`/chat/${targetId}`).then(r => {
+      setMessages(r.data);
+      // רענן שיחות כדי לאפס unread
+      loadConversations();
+    });
   }, [targetId]); // eslint-disable-line
 
   useEffect(() => {
@@ -48,6 +53,18 @@ export default function ChatPage() {
     loadConversations();
   };
 
+  const sendImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('receiverId', targetId);
+    const { data } = await api.post('/chat/image', formData);
+    setMessages(prev => [...prev, data]);
+    loadConversations();
+    e.target.value = '';
+  };
+
   const doDelete = async () => {
     const otherId = confirmDelete.id;
     setConfirmDelete(null);
@@ -59,9 +76,16 @@ export default function ChatPage() {
 
   const myId = user?.token ? JSON.parse(atob(user.token.split('.')[1])).id : null;
 
+  const renderContent = (m) => {
+    if (m.Content?.startsWith('__IMAGE__')) {
+      const src = m.Content.replace('__IMAGE__', '');
+      return <img src={src} alt="תמונה" className="chat-img" onClick={() => setLightbox(src)} />;
+    }
+    return <p>{m.Content}</p>;
+  };
+
   return (
     <div className="chat-layout">
-      {/* Confirm Delete Popup */}
       {confirmDelete && (
         <div className="popup-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="popup-box" onClick={e => e.stopPropagation()}>
@@ -73,6 +97,13 @@ export default function ChatPage() {
               <button className="popup-confirm" onClick={doDelete}>מחק</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {lightbox && (
+        <div className="lightbox" onClick={() => setLightbox(null)}>
+          <button className="lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+          <img src={lightbox} alt="" onClick={e => e.stopPropagation()} />
         </div>
       )}
 
@@ -93,11 +124,7 @@ export default function ChatPage() {
                 </div>
                 {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
               </Link>
-              <button
-                className="conv-delete-btn"
-                onClick={() => setConfirmDelete({ id: c.OtherUserId, name })}
-                title="מחק שיחה"
-              >🗑️</button>
+              <button className="conv-delete-btn" onClick={() => setConfirmDelete({ id: c.OtherUserId, name })} title="מחק שיחה">🗑️</button>
             </div>
           );
         })}
@@ -120,6 +147,7 @@ export default function ChatPage() {
             <div className="messages" ref={messagesRef}>
               {messages.map((m, i) => {
                 const isMine = m.SenderId === myId;
+                const isImg = m.Content?.startsWith('__IMAGE__');
                 const showAvatar = !isMine && (i === 0 || messages[i-1]?.SenderId !== m.SenderId);
                 return (
                   <div key={m.Id || i} className={`message ${isMine ? 'mine' : 'theirs'}`}>
@@ -129,7 +157,7 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div className="msg-content">
-                      <p>{m.Content}</p>
+                      <div className={isImg ? 'msg-img-wrap' : ''}>{renderContent(m)}</div>
                       <span>{new Date(m.SentAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
@@ -138,6 +166,8 @@ export default function ChatPage() {
             </div>
 
             <form className="message-input" onSubmit={sendMessage}>
+              <input type="file" accept="image/*" ref={imageInputRef} style={{ display: 'none' }} onChange={sendImage} />
+              <button type="button" className="img-btn" onClick={() => imageInputRef.current.click()} title="שלח תמונה">📷</button>
               <input value={text} onChange={e => setText(e.target.value)} placeholder="כתוב הודעה..." autoFocus />
               <button type="submit" className="send-btn" disabled={!text.trim()}>שלח ➤</button>
             </form>
