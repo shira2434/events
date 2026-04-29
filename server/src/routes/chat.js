@@ -19,9 +19,10 @@ router.get('/', authMiddleware, async (req, res) => {
       WHERE SenderId = $1 OR ReceiverId = $1
     `, [req.user.id]);
     res.json(result.rows.map(r => ({
-      OtherUserId: r.otheruserid, Email: r.email, UnreadCount: parseInt(r.unreadcount) || 0
+      OtherUserId: r.OtherUserId, Email: r.Email, UnreadCount: parseInt(r.UnreadCount) || 0
     })));
   } catch (err) {
+    console.error('GET /chat error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
@@ -44,6 +45,7 @@ router.get('/:targetId', authMiddleware, async (req, res) => {
       Content: m.content, IsRead: m.isread, SentAt: m.sentat
     })));
   } catch (err) {
+    console.error('GET /chat/:targetId error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
@@ -58,6 +60,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const m = result.rows[0];
     res.status(201).json({ Id: m.id, SenderId: m.senderid, ReceiverId: m.receiverid, Content: m.content, SentAt: m.sentat });
   } catch (err) {
+    console.error('POST /chat error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
