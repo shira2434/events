@@ -9,24 +9,35 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const bottomRef = useRef(); // eslint-disable-line no-unused-vars
+  const [targetEmail, setTargetEmail] = useState('');
+  const [deleting, setDeleting] = useState(null);
+  const messagesRef = useRef();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    api.get('/chat').then(r => setConversations(r.data));
-  }, []);
+  const loadConversations = () =>
+    api.get('/chat').then(r => {
+      setConversations(r.data);
+      if (targetId && targetId !== 'undefined') {
+        const conv = r.data.find(c => c.OtherUserId === +targetId);
+        if (conv) setTargetEmail(conv.Email);
+      }
+    });
+
+  useEffect(() => { loadConversations(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!targetId || targetId === 'undefined') return;
     api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
+    // טען שם גם מהשרת ישירות
+    api.get('/chat').then(r => {
+      const conv = r.data.find(c => c.OtherUserId === +targetId);
+      if (conv) setTargetEmail(conv.Email);
+    });
   }, [targetId]);
 
-  const messagesRef = useRef();
-
   useEffect(() => {
-    if (messagesRef.current) {
+    if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-    }
   }, [messages]);
 
   const sendMessage = async (e) => {
@@ -35,10 +46,21 @@ export default function ChatPage() {
     const { data } = await api.post('/chat', { receiverId: +targetId, content: text });
     setMessages(prev => [...prev, data]);
     setText('');
+    loadConversations();
+  };
+
+  const deleteConversation = async (otherId) => {
+    if (!window.confirm('למחוק את השיחה?')) return;
+    setDeleting(otherId);
+    await api.delete(`/chat/${otherId}`).catch(() => {});
+    setDeleting(null);
+    loadConversations();
+    if (+targetId === otherId) navigate('/chat');
   };
 
   const myId = user?.token ? JSON.parse(atob(user.token.split('.')[1])).id : null;
   const activeConv = conversations.find(c => c.OtherUserId === +targetId);
+  const displayName = activeConv?.Email || targetEmail;
 
   return (
     <div className="chat-layout">
@@ -46,18 +68,22 @@ export default function ChatPage() {
         <button className="back-btn back-btn-chat" onClick={() => navigate(-1)}>← חזרה</button>
         <h3>💬 שיחות</h3>
         {conversations.map(c => (
-          <Link
-            key={c.OtherUserId}
-            to={`/chat/${c.OtherUserId}`}
-            className={`conv-item ${+targetId === c.OtherUserId ? 'active' : ''}`}
-          >
-            <div className="conv-avatar">{c.Email?.[0]?.toUpperCase()}</div>
-            <div className="conv-info">
-              <span className="conv-email">{c.Email}</span>
-              <span className="conv-preview">לחץ לפתיחת שיחה</span>
-            </div>
-            {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
-          </Link>
+          <div key={c.OtherUserId} className={`conv-item ${+targetId === c.OtherUserId ? 'active' : ''}`}>
+            <Link to={`/chat/${c.OtherUserId}`} className="conv-item-link">
+              <div className="conv-avatar">{c.Email?.[0]?.toUpperCase()}</div>
+              <div className="conv-info">
+                <span className="conv-email">{c.Email}</span>
+                <span className="conv-preview">{c.UnreadCount > 0 ? `${c.UnreadCount} הודעות חדשות` : 'לחץ לפתיחת שיחה'}</span>
+              </div>
+              {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
+            </Link>
+            <button
+              className="conv-delete-btn"
+              onClick={() => deleteConversation(c.OtherUserId)}
+              disabled={deleting === c.OtherUserId}
+              title="מחק שיחה"
+            >🗑️</button>
+          </div>
         ))}
         {conversations.length === 0 && (
           <div className="conv-empty">
@@ -68,12 +94,14 @@ export default function ChatPage() {
       </aside>
 
       <div className="chat-window">
-        {targetId ? (
+        {targetId && targetId !== 'undefined' ? (
           <>
             <div className="chat-header">
-              <div className="chat-header-avatar">{activeConv?.Email?.[0]?.toUpperCase() || '?'}</div>
+              <div className="chat-header-avatar">
+                {displayName?.[0]?.toUpperCase() || '?'}
+              </div>
               <div>
-                <div className="chat-header-name">{activeConv?.Email || '...'}</div>
+                <div className="chat-header-name">{displayName || 'טוען...'}</div>
                 <div className="chat-header-status"><span className="status-dot-green" /> מחובר</div>
               </div>
             </div>
@@ -86,7 +114,7 @@ export default function ChatPage() {
                   <div key={m.Id} className={`message ${isMine ? 'mine' : 'theirs'}`}>
                     {!isMine && (
                       <div className={`msg-avatar ${showAvatar ? '' : 'msg-avatar-hidden'}`}>
-                        {activeConv?.Email?.[0]?.toUpperCase() || '?'}
+                        {displayName?.[0]?.toUpperCase() || '?'}
                       </div>
                     )}
                     <div className="msg-content">

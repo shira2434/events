@@ -65,4 +65,16 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/:targetId', authMiddleware, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM ChatMessages WHERE (SenderId = $1 AND ReceiverId = $2) OR (SenderId = $2 AND ReceiverId = $1)',
+      [req.user.id, req.params.targetId]
+    );
+    res.json({ message: 'deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

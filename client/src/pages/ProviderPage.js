@@ -172,10 +172,11 @@ export default function ProviderPage() {
 
   useEffect(() => { api.get(`/providers/${id}`).then(r => setProvider(r.data)); }, [id]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!user) return navigate('/login');
     const targetId = provider.UserId || provider.userid;
-    if (!targetId) return alert('לא ניתן לשלוח הודעה לספק זה');
+    if (!targetId) return;
+    // בדוק אם כבר יש שיחה — פתח אותה
     navigate(`/chat/${targetId}`);
   };
 

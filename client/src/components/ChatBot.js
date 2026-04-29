@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const BOT_RESPONSES = {
   ברירת_מחדל: 'אשמח לעזור! 😊 תוכל לשאול אותי על ספקים, קטגוריות, מחירים, או איך להשתמש באתר.',
@@ -44,6 +45,13 @@ function getBotReply(text) {
 
 export default function ChatBot() {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const isOnChatPage = location.pathname.startsWith('/chat');
+
+  // סגור את הבוט כשנכנסים לדף הצ'אט
+  useEffect(() => { if (isOnChatPage) setOpen(false); }, [isOnChatPage]);
+
+  if (isOnChatPage) return null;
   const [messages, setMessages] = useState([
     { from: 'bot', text: 'שלום! 👋 אני EventBot, העוזר החכם של EventPro.\nאיך אוכל לעזור לך למצוא את הספק המושלם?' }
   ]);
