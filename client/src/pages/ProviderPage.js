@@ -174,7 +174,9 @@ export default function ProviderPage() {
 
   const sendMessage = () => {
     if (!user) return navigate('/login');
-    navigate(`/chat/${provider.userid || provider.UserId || id}`);
+    const targetId = provider.UserId || provider.userid;
+    if (!targetId) return alert('לא ניתן לשלוח הודעה לספק זה');
+    navigate(`/chat/${targetId}`);
   };
 
   const submitReview = async (e) => {

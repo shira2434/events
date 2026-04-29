@@ -17,7 +17,7 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    if (!targetId) return;
+    if (!targetId || targetId === 'undefined') return;
     api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
   }, [targetId]);
 
