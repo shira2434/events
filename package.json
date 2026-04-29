@@ -1,9 +1,8 @@
 {
-  "name": "events-monorepo",
+  "name": "events-project",
   "version": "1.0.0",
   "scripts": {
-    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
     "build": "cd client && npm install && npm run build",
-    "start": "cd server && npm start"
+    "start": "cd server && npm install && node src/index.js"
   }
 }
