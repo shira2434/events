@@ -30,15 +30,25 @@ export default function ChatPage() {
     return r.data;
   };
 
-  useEffect(() => { loadConversations(); }, []); // eslint-disable-line
+  useEffect(() => {
+    loadConversations();
+    // polling לרשימת שיחות
+    const interval = setInterval(() => loadConversations(), 5000);
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     if (!targetId || targetId === 'undefined') return;
     api.get(`/chat/${targetId}`).then(r => {
       setMessages(r.data);
-      // רענן שיחות כדי לאפס unread
       loadConversations();
     });
+    // polling כל 3 שניות להודעות חדשות
+    const interval = setInterval(() => {
+      api.get(`/chat/${targetId}`).then(r => setMessages(r.data)).catch(() => {});
+      loadConversations();
+    }, 3000);
+    return () => clearInterval(interval);
   }, [targetId]); // eslint-disable-line
 
   useEffect(() => {
