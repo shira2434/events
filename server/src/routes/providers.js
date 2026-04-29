@@ -8,7 +8,8 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM ProviderProfiles WHERE UserId = $1', [req.user.id]);
     if (!result.rows[0]) return res.status(404).json({ message: 'Not found' });
-    res.json(result.rows[0]);
+    const p = result.rows[0];
+    res.json({ Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category, Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom, AverageRating: p.averagerating });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -39,7 +40,11 @@ router.get('/', async (req, res) => {
     if (category) { params.push(category); query += ` AND p.Category = $${params.length}`; }
     if (minRating) { params.push(parseFloat(minRating)); query += ` AND p.AverageRating >= $${params.length}`; }
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json(result.rows.map(p => ({
+      Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category,
+      Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
+      AverageRating: p.averagerating || 0, Email: p.email
+    })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -48,12 +53,20 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const [profile, media, reviews] = await Promise.all([
-      pool.query('SELECT p.*, u.Email FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE p.Id = $1', [req.params.id]),
+      pool.query(`SELECT p.Id, p.UserId, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email
+                  FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE p.Id = $1`, [req.params.id]),
       pool.query('SELECT FilePath FROM PortfolioMedia WHERE ProviderId = $1 ORDER BY UploadedAt DESC', [req.params.id]),
       pool.query('SELECT r.Rating, r.Comment, r.CreatedAt, u.Email FROM Reviews r JOIN Users u ON r.CustomerId = u.Id WHERE r.ProviderId = $1 ORDER BY r.CreatedAt DESC', [req.params.id]),
     ]);
     if (!profile.rows[0]) return res.status(404).json({ message: 'Provider not found' });
-    res.json({ ...profile.rows[0], portfolio: media.rows, reviews: reviews.rows });
+    const p = profile.rows[0];
+    res.json({
+      Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category,
+      Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
+      AverageRating: p.averagerating || 0, Email: p.email,
+      portfolio: media.rows.map(r => ({ FilePath: r.filepath })),
+      reviews: reviews.rows.map(r => ({ Rating: r.rating, Comment: r.comment, Email: r.email, CreatedAt: r.createdat }))
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

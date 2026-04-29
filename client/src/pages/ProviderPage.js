@@ -174,7 +174,7 @@ export default function ProviderPage() {
 
   const sendMessage = () => {
     if (!user) return navigate('/login');
-    navigate(`/chat/${provider.UserId || id}`);
+    navigate(`/chat/${provider.userid || provider.UserId || id}`);
   };
 
   const submitReview = async (e) => {
