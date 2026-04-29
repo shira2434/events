@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// הגשת קבצי העלאות
+// static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API Routes
@@ -19,22 +19,24 @@ app.use('/api/chat', require('./routes/chat'));
 
 // Production Setup
 if (process.env.NODE_ENV === 'production') {
-  // יצירת נתיב אבסולוטי יחסית למיקום של הקובץ הנוכחי
-  const buildPath = path.join(__dirname, '..', '..', 'client', 'build');
+  // השינוי הקריטי: שימוש בנתיב אבסולוטי מהשורש של הפרויקט
+  const buildPath = path.join(process.cwd(), 'client', 'build');
   
-  // הגשת הקבצים הסטטיים
   app.use(express.static(buildPath));
 
-  // פתרון Catch-all להגשת ה-React
-  app.get('/*', (req, res) => {
-    // אם זה לא נתיב API, שלח את ה-index.html
+  app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(buildPath, 'index.html'));
+      res.sendFile(path.join(buildPath, 'index.html'), (err) => {
+        if (err) {
+          console.error('Error sending index.html:', err);
+          res.status(500).send('Frontend build not found. Check GitHub for client/build folder.');
+        }
+      });
     }
   });
 }
 
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(`[${req.method}] ${req.url} →`, err.message);
   res.status(500).json({ message: err.message });
