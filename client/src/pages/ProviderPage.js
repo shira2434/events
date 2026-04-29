@@ -174,10 +174,11 @@ export default function ProviderPage() {
 
   const sendMessage = async () => {
     if (!user) return navigate('/login');
-    const targetId = provider.UserId || provider.userid;
-    if (!targetId) return;
-    // בדוק אם כבר יש שיחה — פתח אותה
-    navigate(`/chat/${targetId}`);
+    const targetUserId = provider.UserId || provider.userid;
+    if (!targetUserId) return;
+    // שמור את שם הספק ל-localStorage
+    localStorage.setItem(`chat_name_${targetUserId}`, provider.BusinessName || provider.businessname || provider.Email || provider.email || '');
+    navigate(`/chat/${targetUserId}`);
   };
 
   const submitReview = async (e) => {
