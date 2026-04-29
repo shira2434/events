@@ -9,16 +9,16 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
   const messagesRef = useRef();
   const navigate = useNavigate();
 
-  // שם תמיד מ-localStorage
-  const displayName = localStorage.getItem(`chat_name_${targetId}`) || '';
+  const getName = (id) => localStorage.getItem(`chat_name_${id}`) || '';
+  const displayName = getName(targetId);
 
   const loadConversations = async () => {
     const r = await api.get('/chat');
     setConversations(r.data);
-    // עדכן localStorage לכל השיחות
     r.data.forEach(c => {
       if (!localStorage.getItem(`chat_name_${c.OtherUserId}`))
         localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
@@ -48,8 +48,9 @@ export default function ChatPage() {
     loadConversations();
   };
 
-  const deleteConversation = async (otherId) => {
-    if (!window.confirm('למחוק את השיחה?')) return;
+  const doDelete = async () => {
+    const otherId = confirmDelete.id;
+    setConfirmDelete(null);
     await api.delete(`/chat/${otherId}`).catch(() => {});
     localStorage.removeItem(`chat_name_${otherId}`);
     await loadConversations();
@@ -60,24 +61,46 @@ export default function ChatPage() {
 
   return (
     <div className="chat-layout">
+      {/* Confirm Delete Popup */}
+      {confirmDelete && (
+        <div className="popup-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="popup-box" onClick={e => e.stopPropagation()}>
+            <div className="popup-icon">🗑️</div>
+            <h3>מחיקת שיחה</h3>
+            <p>האם למחוק את השיחה עם <strong>{confirmDelete.name}</strong>?<br/>פעולה זו אינה ניתנת לביטול.</p>
+            <div className="popup-btns">
+              <button className="popup-cancel" onClick={() => setConfirmDelete(null)}>ביטול</button>
+              <button className="popup-confirm" onClick={doDelete}>מחק</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <aside className="conversations-list">
         <button className="back-btn back-btn-chat" onClick={() => navigate(-1)}>← חזרה</button>
         <h3>💬 שיחות</h3>
-        {conversations.map(c => (
-          <div key={c.OtherUserId} className={`conv-item ${+targetId === c.OtherUserId ? 'active' : ''}`}>
-            <Link to={`/chat/${c.OtherUserId}`} className="conv-item-link">
-              <div className="conv-avatar">{c.Email?.[0]?.toUpperCase()}</div>
-              <div className="conv-info">
-                <span className="conv-email">{c.Email}</span>
-                <span className="conv-preview">
-                  {c.UnreadCount > 0 ? `${c.UnreadCount} הודעות חדשות` : 'לחץ לפתיחת שיחה'}
-                </span>
-              </div>
-              {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
-            </Link>
-            <button className="conv-delete-btn" onClick={() => deleteConversation(c.OtherUserId)} title="מחק שיחה">🗑️</button>
-          </div>
-        ))}
+        {conversations.map(c => {
+          const name = localStorage.getItem(`chat_name_${c.OtherUserId}`) || c.Email;
+          return (
+            <div key={c.OtherUserId} className={`conv-item ${+targetId === c.OtherUserId ? 'active' : ''}`}>
+              <Link to={`/chat/${c.OtherUserId}`} className="conv-item-link">
+                <div className="conv-avatar">{name?.[0]?.toUpperCase()}</div>
+                <div className="conv-info">
+                  <span className="conv-email">{name}</span>
+                  <span className="conv-preview">
+                    {c.UnreadCount > 0 ? `${c.UnreadCount} הודעות חדשות` : 'לחץ לפתיחת שיחה'}
+                  </span>
+                </div>
+                {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
+              </Link>
+              <button
+                className="conv-delete-btn"
+                onClick={() => setConfirmDelete({ id: c.OtherUserId, name })}
+                title="מחק שיחה"
+              >🗑️</button>
+            </div>
+          );
+        })}
         {conversations.length === 0 && (
           <div className="conv-empty"><span>💬</span><p>אין שיחות עדיין</p></div>
         )}
