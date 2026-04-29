@@ -19,10 +19,8 @@ app.use('/api/chat', require('./routes/chat'));
 
 // Production Setup
 if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(process.cwd(), 'client', 'build');
+  const buildPath = path.join(__dirname, '..', '..', 'client', 'build');
   app.use(express.static(buildPath));
-
-  // התיקון הקריטי: במקום app.get('*'), משתמשים ב-app.use
   app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
       return res.sendFile(path.join(buildPath, 'index.html'));
