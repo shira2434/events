@@ -27,6 +27,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!targetId || targetId === 'undefined') return;
+    window.scrollTo(0, 0);
     api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
     loadConversations();
   }, [targetId]); // eslint-disable-line
