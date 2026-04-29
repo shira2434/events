@@ -9,22 +9,20 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const [targetEmail, setTargetEmail] = useState(
-    targetId ? localStorage.getItem(`chat_name_${targetId}`) || '' : ''
-  );
   const messagesRef = useRef();
   const navigate = useNavigate();
+
+  // שם תמיד מ-localStorage
+  const displayName = localStorage.getItem(`chat_name_${targetId}`) || '';
 
   const loadConversations = async () => {
     const r = await api.get('/chat');
     setConversations(r.data);
-    if (targetId && targetId !== 'undefined') {
-      const conv = r.data.find(c => c.OtherUserId === +targetId);
-      if (conv) {
-        setTargetEmail(conv.Email);
-        localStorage.setItem(`chat_name_${targetId}`, conv.Email);
-      }
-    }
+    // עדכן localStorage לכל השיחות
+    r.data.forEach(c => {
+      if (!localStorage.getItem(`chat_name_${c.OtherUserId}`))
+        localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
+    });
     return r.data;
   };
 
@@ -32,12 +30,10 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!targetId || targetId === 'undefined') return;
-    window.scrollTo(0, 0);
     api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
     loadConversations();
   }, [targetId]); // eslint-disable-line
 
-  // גלילה לתחתית תמיד
   useEffect(() => {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -55,13 +51,12 @@ export default function ChatPage() {
   const deleteConversation = async (otherId) => {
     if (!window.confirm('למחוק את השיחה?')) return;
     await api.delete(`/chat/${otherId}`).catch(() => {});
+    localStorage.removeItem(`chat_name_${otherId}`);
     await loadConversations();
     if (+targetId === otherId) navigate('/chat');
   };
 
   const myId = user?.token ? JSON.parse(atob(user.token.split('.')[1])).id : null;
-  const activeConv = conversations.find(c => c.OtherUserId === +targetId);
-  const displayName = activeConv?.Email || targetEmail;
 
   return (
     <div className="chat-layout">
@@ -80,18 +75,11 @@ export default function ChatPage() {
               </div>
               {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
             </Link>
-            <button
-              className="conv-delete-btn"
-              onClick={() => deleteConversation(c.OtherUserId)}
-              title="מחק שיחה"
-            >🗑️</button>
+            <button className="conv-delete-btn" onClick={() => deleteConversation(c.OtherUserId)} title="מחק שיחה">🗑️</button>
           </div>
         ))}
         {conversations.length === 0 && (
-          <div className="conv-empty">
-            <span>💬</span>
-            <p>אין שיחות עדיין</p>
-          </div>
+          <div className="conv-empty"><span>💬</span><p>אין שיחות עדיין</p></div>
         )}
       </aside>
 
@@ -99,14 +87,10 @@ export default function ChatPage() {
         {targetId && targetId !== 'undefined' ? (
           <>
             <div className="chat-header">
-              <div className="chat-header-avatar">
-                {displayName?.[0]?.toUpperCase() || '?'}
-              </div>
+              <div className="chat-header-avatar">{displayName?.[0]?.toUpperCase() || '?'}</div>
               <div>
-                <div className="chat-header-name">{displayName || 'טוען...'}</div>
-                <div className="chat-header-status">
-                  <span className="status-dot-green" /> מחובר
-                </div>
+                <div className="chat-header-name">{displayName || '...'}</div>
+                <div className="chat-header-status"><span className="status-dot-green" /> מחובר</div>
               </div>
             </div>
 
@@ -131,15 +115,8 @@ export default function ChatPage() {
             </div>
 
             <form className="message-input" onSubmit={sendMessage}>
-              <input
-                value={text}
-                onChange={e => setText(e.target.value)}
-                placeholder="כתוב הודעה..."
-                autoFocus
-              />
-              <button type="submit" className="send-btn" disabled={!text.trim()}>
-                שלח ➤
-              </button>
+              <input value={text} onChange={e => setText(e.target.value)} placeholder="כתוב הודעה..." autoFocus />
+              <button type="submit" className="send-btn" disabled={!text.trim()}>שלח ➤</button>
             </form>
           </>
         ) : (
