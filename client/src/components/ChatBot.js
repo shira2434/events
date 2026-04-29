@@ -54,7 +54,7 @@ export default function ChatBot() {
   const [quickSet, setQuickSet] = useState(0);
   const bottomRef = useRef();
 
-  const isOnChatPage = location.pathname.startsWith('/chat');
+  const isOnChatPage = location.pathname.startsWith('/chat'); // v2
 
   useEffect(() => { if (isOnChatPage) setOpen(false); }, [isOnChatPage]);
 
