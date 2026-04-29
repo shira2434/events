@@ -2,8 +2,11 @@
   "name": "eventpro",
   "version": "1.0.0",
   "scripts": {
-    "build": "cd client && npm install && npm run build",
-    "start": "cd server && node src/index.js",
-    "install-all": "cd client && npm install && cd ../server && npm install"
+    "install": "cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build",
+    "start": "cd server && node src/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
