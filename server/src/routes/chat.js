@@ -4,6 +4,16 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
+router.get('/user/:userId', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT Email FROM Users WHERE Id = $1', [req.params.userId]);
+    if (!result.rows[0]) return res.status(404).json({ message: 'Not found' });
+    res.json({ Email: result.rows[0].email });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
