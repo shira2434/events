@@ -18,7 +18,9 @@ router.get('/', authMiddleware, async (req, res) => {
       JOIN Users u ON u.Id = CASE WHEN SenderId = $1 THEN ReceiverId ELSE SenderId END
       WHERE SenderId = $1 OR ReceiverId = $1
     `, [req.user.id]);
-    res.json(result.rows);
+    res.json(result.rows.map(r => ({
+      OtherUserId: r.otheruserid, Email: r.email, UnreadCount: parseInt(r.unreadcount) || 0
+    })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -37,7 +39,10 @@ router.get('/:targetId', authMiddleware, async (req, res) => {
       [req.user.id, req.params.targetId]
     );
 
-    res.json(result.rows);
+    res.json(result.rows.map(m => ({
+      Id: m.id, SenderId: m.senderid, ReceiverId: m.receiverid,
+      Content: m.content, IsRead: m.isread, SentAt: m.sentat
+    })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -50,7 +55,8 @@ router.post('/', authMiddleware, async (req, res) => {
       'INSERT INTO ChatMessages (SenderId, ReceiverId, Content) VALUES ($1, $2, $3) RETURNING *',
       [req.user.id, receiverId, content]
     );
-    res.status(201).json(result.rows[0]);
+    const m = result.rows[0];
+    res.status(201).json({ Id: m.id, SenderId: m.senderid, ReceiverId: m.receiverid, Content: m.content, SentAt: m.sentat });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
