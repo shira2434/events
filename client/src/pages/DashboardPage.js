@@ -25,8 +25,8 @@ export default function DashboardPage() {
         priceFrom: r.data.PriceFrom || '',
       });
     }).catch(() => setIsNew(true));
-    return () => previews.forEach(URL.revokeObjectURL);
-  }, []);
+    return () => previews.forEach(URL.revokeObjectURL); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFiles = (newFiles) => {
     const arr = Array.from(newFiles);

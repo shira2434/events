@@ -35,9 +35,9 @@ export default function Footer() {
       <div className="footer-bottom">
         <p>© 2024 EventPro. כל הזכויות שמורות.</p>
         <div className="footer-social">
-          <a href="#" aria-label="Facebook">📘</a>
-          <a href="#" aria-label="Instagram">📸</a>
-          <a href="#" aria-label="WhatsApp">💬</a>
+          <span role="img" aria-label="Facebook">📘</span>
+          <span role="img" aria-label="Instagram">📸</span>
+          <span role="img" aria-label="WhatsApp">💬</span>
         </div>
       </div>
     </footer>

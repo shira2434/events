@@ -9,7 +9,7 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const bottomRef = useRef();
+  const bottomRef = useRef(); // eslint-disable-line no-unused-vars
   const navigate = useNavigate();
 
   useEffect(() => {
