@@ -10,31 +10,28 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [targetEmail, setTargetEmail] = useState('');
-  const [deleting, setDeleting] = useState(null);
   const messagesRef = useRef();
   const navigate = useNavigate();
 
-  const loadConversations = () =>
-    api.get('/chat').then(r => {
-      setConversations(r.data);
-      if (targetId && targetId !== 'undefined') {
-        const conv = r.data.find(c => c.OtherUserId === +targetId);
-        if (conv) setTargetEmail(conv.Email);
-      }
-    });
+  const loadConversations = async () => {
+    const r = await api.get('/chat');
+    setConversations(r.data);
+    if (targetId && targetId !== 'undefined') {
+      const conv = r.data.find(c => c.OtherUserId === +targetId);
+      if (conv) setTargetEmail(conv.Email);
+    }
+    return r.data;
+  };
 
-  useEffect(() => { loadConversations(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadConversations(); }, []); // eslint-disable-line
 
   useEffect(() => {
     if (!targetId || targetId === 'undefined') return;
     api.get(`/chat/${targetId}`).then(r => setMessages(r.data));
-    // טען שם גם מהשרת ישירות
-    api.get('/chat').then(r => {
-      const conv = r.data.find(c => c.OtherUserId === +targetId);
-      if (conv) setTargetEmail(conv.Email);
-    });
-  }, [targetId]);
+    loadConversations();
+  }, [targetId]); // eslint-disable-line
 
+  // גלילה לתחתית תמיד
   useEffect(() => {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -51,10 +48,8 @@ export default function ChatPage() {
 
   const deleteConversation = async (otherId) => {
     if (!window.confirm('למחוק את השיחה?')) return;
-    setDeleting(otherId);
     await api.delete(`/chat/${otherId}`).catch(() => {});
-    setDeleting(null);
-    loadConversations();
+    await loadConversations();
     if (+targetId === otherId) navigate('/chat');
   };
 
@@ -73,14 +68,15 @@ export default function ChatPage() {
               <div className="conv-avatar">{c.Email?.[0]?.toUpperCase()}</div>
               <div className="conv-info">
                 <span className="conv-email">{c.Email}</span>
-                <span className="conv-preview">{c.UnreadCount > 0 ? `${c.UnreadCount} הודעות חדשות` : 'לחץ לפתיחת שיחה'}</span>
+                <span className="conv-preview">
+                  {c.UnreadCount > 0 ? `${c.UnreadCount} הודעות חדשות` : 'לחץ לפתיחת שיחה'}
+                </span>
               </div>
               {c.UnreadCount > 0 && <span className="badge">{c.UnreadCount}</span>}
             </Link>
             <button
               className="conv-delete-btn"
               onClick={() => deleteConversation(c.OtherUserId)}
-              disabled={deleting === c.OtherUserId}
               title="מחק שיחה"
             >🗑️</button>
           </div>
@@ -102,16 +98,18 @@ export default function ChatPage() {
               </div>
               <div>
                 <div className="chat-header-name">{displayName || 'טוען...'}</div>
-                <div className="chat-header-status"><span className="status-dot-green" /> מחובר</div>
+                <div className="chat-header-status">
+                  <span className="status-dot-green" /> מחובר
+                </div>
               </div>
             </div>
 
             <div className="messages" ref={messagesRef}>
               {messages.map((m, i) => {
                 const isMine = m.SenderId === myId;
-                const showAvatar = !isMine && (i === 0 || messages[i - 1]?.SenderId !== m.SenderId);
+                const showAvatar = !isMine && (i === 0 || messages[i-1]?.SenderId !== m.SenderId);
                 return (
-                  <div key={m.Id} className={`message ${isMine ? 'mine' : 'theirs'}`}>
+                  <div key={m.Id || i} className={`message ${isMine ? 'mine' : 'theirs'}`}>
                     {!isMine && (
                       <div className={`msg-avatar ${showAvatar ? '' : 'msg-avatar-hidden'}`}>
                         {displayName?.[0]?.toUpperCase() || '?'}
@@ -134,7 +132,7 @@ export default function ChatPage() {
                 autoFocus
               />
               <button type="submit" className="send-btn" disabled={!text.trim()}>
-                <span>שלח</span> ➤
+                שלח ➤
               </button>
             </form>
           </>
