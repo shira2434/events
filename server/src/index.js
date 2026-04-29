@@ -19,20 +19,15 @@ app.use('/api/chat', require('./routes/chat'));
 
 // Production Setup
 if (process.env.NODE_ENV === 'production') {
-  // השינוי הקריטי: שימוש בנתיב אבסולוטי מהשורש של הפרויקט
   const buildPath = path.join(process.cwd(), 'client', 'build');
-  
   app.use(express.static(buildPath));
 
-  app.get('*', (req, res) => {
+  // התיקון הקריטי: במקום app.get('*'), משתמשים ב-app.use
+  app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(buildPath, 'index.html'), (err) => {
-        if (err) {
-          console.error('Error sending index.html:', err);
-          res.status(500).send('Frontend build not found. Check GitHub for client/build folder.');
-        }
-      });
+      return res.sendFile(path.join(buildPath, 'index.html'));
     }
+    next();
   });
 }
 
@@ -45,4 +40,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});//יחי
+});
