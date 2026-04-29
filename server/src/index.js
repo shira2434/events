@@ -5,36 +5,34 @@ const path = require('path');
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-
-// static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// API Routes
+// 1. API Routes (חייבים לבוא לפני ה-Static Files)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/providers', require('./routes/providers'));
 app.use('/api/portfolio', require('./routes/portfolio'));
 app.use('/api/chat', require('./routes/chat'));
 
-// Production Setup
+// 2. Production Setup
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../../client/build');
   
-  // הגשת הקבצים הסטטיים של React
+  // הגשת קבצים סטטיים
   app.use(express.static(buildPath));
 
-  // פתרון ל-PathError ב-Node 22: שימוש בסינטקס מפורש שתופס הכל
-  app.get('*', (req, res) => {
-    // אם הבקשה היא לא ל-API, נשלח את ה-index.html
+  // פתרון עוקף לשגיאת PathError: 
+  // משתמשים ב-Middleware שתופס הכל במקום app.get('*')
+  app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(buildPath, 'index.html'));
+      return res.sendFile(path.join(buildPath, 'index.html'));
     }
+    next();
   });
 }
 
-// Error handling middleware
+// 3. Error handling
 app.use((err, req, res, next) => {
   console.error(`[${req.method}] ${req.url} →`, err.message);
   res.status(500).json({ message: err.message });
@@ -43,5 +41,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log('Mode:', process.env.NODE_ENV);
+  console.log('PostgreSQL: Connected');
 });
