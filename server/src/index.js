@@ -7,6 +7,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// הגשת קבצי העלאות
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API Routes
@@ -17,17 +19,18 @@ app.use('/api/chat', require('./routes/chat'));
 
 // Production Setup
 if (process.env.NODE_ENV === 'production') {
-  // path.resolve מוודא שאנחנו בונים נתיב נכון יחסית לתיקייה הנוכחית
-  const buildPath = path.resolve(__dirname, '../../client/build');
+  // יצירת נתיב אבסולוטי יחסית למיקום של הקובץ הנוכחי
+  const buildPath = path.join(__dirname, '..', '..', 'client', 'build');
   
+  // הגשת הקבצים הסטטיים
   app.use(express.static(buildPath));
 
-  app.use((req, res, next) => {
+  // פתרון Catch-all להגשת ה-React
+  app.get('/*', (req, res) => {
+    // אם זה לא נתיב API, שלח את ה-index.html
     if (!req.path.startsWith('/api')) {
-      // כאן התיקון הקריטי לנתיב הקובץ
-      return res.sendFile(path.join(buildPath, 'index.html'));
+      res.sendFile(path.join(buildPath, 'index.html'));
     }
-    next();
   });
 }
 
