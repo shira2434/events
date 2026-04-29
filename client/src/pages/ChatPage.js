@@ -11,6 +11,8 @@ export default function ChatPage() {
   const [text, setText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [lightbox, setLightbox] = useState(null);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
   const messagesRef = useRef();
   const imageInputRef = useRef();
   const navigate = useNavigate();
@@ -43,6 +45,25 @@ export default function ChatPage() {
     if (messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }, [messages]);
+
+  // בדוק אם הצד השני מקליד
+  useEffect(() => {
+    if (!targetId || targetId === 'undefined') return;
+    const interval = setInterval(() => {
+      api.get(`/chat/typing/${targetId}`).then(r => setOtherTyping(r.data.isTyping)).catch(() => {});
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [targetId]); // eslint-disable-line
+
+  const handleTyping = (val) => {
+    setText(val);
+    if (!targetId || targetId === 'undefined') return;
+    api.post('/chat/typing', { receiverId: +targetId, isTyping: true }).catch(() => {});
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      api.post('/chat/typing', { receiverId: +targetId, isTyping: false }).catch(() => {});
+    }, 2000);
+  };
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -163,12 +184,22 @@ export default function ChatPage() {
                   </div>
                 );
               })}
+              {otherTyping && (
+                <div className="message theirs">
+                  <div className="msg-avatar">{displayName?.[0]?.toUpperCase() || '?'}</div>
+                  <div className="msg-content">
+                    <div className="typing-indicator">
+                      <span/><span/><span/>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <form className="message-input" onSubmit={sendMessage}>
               <input type="file" accept="image/*" ref={imageInputRef} style={{ display: 'none' }} onChange={sendImage} />
               <button type="button" className="img-btn" onClick={() => imageInputRef.current.click()} title="שלח תמונה">📷</button>
-              <input value={text} onChange={e => setText(e.target.value)} placeholder="כתוב הודעה..." autoFocus />
+              <input value={text} onChange={e => handleTyping(e.target.value)} placeholder="כתוב הודעה..." autoFocus />
               <button type="submit" className="send-btn" disabled={!text.trim()}>שלח ➤</button>
             </form>
           </>

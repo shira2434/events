@@ -1565,3 +1565,19 @@ section h2 { margin-bottom: 1rem; font-size: 1.3rem; font-weight: 700; }
 .msg-img-wrap p { padding: 0; background: none; box-shadow: none; border: none; }
 .message.mine .msg-img-wrap .chat-img { border-bottom-right-radius: 4px; }
 .message.theirs .msg-img-wrap .chat-img { border-bottom-left-radius: 4px; }
+
+/* ── Chat Typing Indicator ── */
+.typing-indicator {
+  display: flex; align-items: center; gap: 4px;
+  background: #fff; border: 1px solid #e5e7eb;
+  padding: 0.7rem 1rem; border-radius: 18px;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.typing-indicator span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #aaa; display: inline-block;
+  animation: typingDot 1.2s infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }

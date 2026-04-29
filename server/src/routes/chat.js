@@ -6,6 +6,27 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
+// Typing indicator - store in memory
+const typingUsers = {};
+
+router.post('/typing', authMiddleware, async (req, res) => {
+  const { receiverId, isTyping } = req.body;
+  const key = `${req.user.id}_${receiverId}`;
+  if (isTyping) {
+    typingUsers[key] = Date.now();
+  } else {
+    delete typingUsers[key];
+  }
+  res.json({ ok: true });
+});
+
+router.get('/typing/:targetId', authMiddleware, async (req, res) => {
+  const key = `${req.params.targetId}_${req.user.id}`;
+  const lastTyping = typingUsers[key];
+  const isTyping = lastTyping && (Date.now() - lastTyping < 3000);
+  res.json({ isTyping: !!isTyping });
+});
+
 router.get('/user/:userId', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query('SELECT Email FROM Users WHERE Id = $1', [req.params.userId]);
