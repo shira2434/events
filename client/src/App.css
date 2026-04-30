@@ -1583,6 +1583,7 @@ section h2 { margin-bottom: 1rem; font-size: 1.3rem; font-weight: 700; }
 .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
 /* ── Auth Page Redesign ── */
+.auth-container { display: none !important; }
 .auth-page {
   display: flex;
   min-height: calc(100vh - 64px);
