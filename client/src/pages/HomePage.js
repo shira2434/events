@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
 const CATEGORIES = [
@@ -177,11 +177,17 @@ function SkeletonCard() {
 }
 
 export default function HomePage() {
+  const [searchParams] = useSearchParams();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('הכל');
+  const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'הכל');
   const [minRating, setMinRating] = useState('');
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat) setActiveCategory(cat);
+  }, [searchParams]);
 
   useEffect(() => {
     setLoading(true);
