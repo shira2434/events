@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
-const CATEGORIES = ['צלם', 'מאפרת', 'קייטרינג', 'DJ', 'פרחים', 'אולם'];
+const CATEGORIES = ['צלם', 'מאפרת', 'קייטרינג', 'DJ', 'פרחים', 'אולם', 'תכשיטים', 'הסעות', 'עוגות'];
+const CATEGORY_ICONS = { 'צלם': '📸', 'מאפרת': '💄', 'קייטרינג': '🍽️', 'DJ': '🎧', 'פרחים': '💐', 'אולם': '🏛️', 'תכשיטים': '💍', 'הסעות': '🚌', 'עוגות': '🎂' };
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function DashboardPage() {
     e.preventDefault();
     await api.put('/providers/settings', settings);
     setSaved(true);
+    setIsNew(false);
     setTimeout(() => setSaved(false), 2500);
   };
 
@@ -69,6 +71,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
       <div className="dashboard-header">
         <button className="back-btn" onClick={() => navigate(-1)}>← חזרה</button>
         <h1>⚙️ לוח בקרה</h1>
@@ -86,13 +89,9 @@ export default function DashboardPage() {
               onChange={e => setSettings({ ...settings, businessName: e.target.value })}
               required
             />
-            <select
-              value={settings.category}
-              onChange={e => setSettings({ ...settings, category: e.target.value })}
-              required
-            >
+            <select value={settings.category} onChange={e => setSettings({ ...settings, category: e.target.value })} required>
               <option value="">בחר קטגוריה</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>)}
             </select>
           </div>
           <textarea
@@ -124,52 +123,40 @@ export default function DashboardPage() {
         {isNew ? (
           <div className="new-provider-notice">⚠️ שמור תחילה את פרטי העסק למעלה ואז תוכל להעלות תמונות</div>
         ) : (
-        <form onSubmit={uploadFiles}>
-          <div
-            className={`upload-area ${dragOver ? 'drag-over' : ''}`}
-            onClick={() => fileInputRef.current.click()}
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,video/*"
-              onChange={e => handleFiles(e.target.files)}
-            />
-            <div className="upload-icon">📤</div>
-            <p>גרור תמונות לכאן או <strong>לחץ לבחירה</strong></p>
-            <span>PNG, JPG, MP4 עד 10MB</span>
-          </div>
-
-          {previews.length > 0 && (
-            <div className="upload-previews">
-              {previews.map((src, i) => (
-                <div key={i} className="preview-item">
-                  <img src={src} alt="" />
-                  <button
-                    type="button"
-                    className="preview-remove"
-                    onClick={() => {
-                      const newFiles = files.filter((_, j) => j !== i);
-                      const newPreviews = previews.filter((_, j) => j !== i);
-                      setFiles(newFiles);
-                      setPreviews(newPreviews);
-                    }}
-                  >✕</button>
-                </div>
-              ))}
+          <form onSubmit={uploadFiles}>
+            <div
+              className={`upload-area ${dragOver ? 'drag-over' : ''}`}
+              onClick={() => fileInputRef.current.click()}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+            >
+              <input ref={fileInputRef} type="file" multiple accept="image/*,video/*" onChange={e => handleFiles(e.target.files)} />
+              <div className="upload-icon">📤</div>
+              <p>גרור תמונות לכאן או <strong>לחץ לבחירה</strong></p>
+              <span>PNG, JPG, MP4 עד 10MB</span>
             </div>
-          )}
 
-          {files.length > 0 && (
-            <button type="submit" className="btn-primary" disabled={uploading}>
-              {uploading ? 'מעלה...' : `העלה ${files.length} קבצים`}
-            </button>
-          )}
-        </form>
+            {previews.length > 0 && (
+              <div className="upload-previews">
+                {previews.map((src, i) => (
+                  <div key={i} className="preview-item">
+                    <img src={src} alt="" />
+                    <button type="button" className="preview-remove" onClick={() => {
+                      setFiles(files.filter((_, j) => j !== i));
+                      setPreviews(previews.filter((_, j) => j !== i));
+                    }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {files.length > 0 && (
+              <button type="submit" className="btn-primary" disabled={uploading}>
+                {uploading ? 'מעלה...' : `העלה ${files.length} קבצים`}
+              </button>
+            )}
+          </form>
         )}
       </section>
     </div>
