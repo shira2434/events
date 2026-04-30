@@ -239,9 +239,17 @@ export default function ChatPage() {
           </>
         ) : (
           <div className="chat-placeholder">
-            <div className="chat-placeholder-icon">💬</div>
-            <p>בחר שיחה מהרשימה</p>
-            <span>או פנה לספק מדף הפרופיל שלו</span>
+            <div className="chat-placeholder-inner">
+              <div className="chat-placeholder-icon">💬</div>
+              <h2>ההודעות שלך</h2>
+              <p>בחר שיחה מהרשימה כדי להתחיל</p>
+              <span>או פנה לספק מדף הפרופיל שלו</span>
+              <div className="chat-placeholder-tips">
+                <div className="chat-tip">📷 שלח תמונות</div>
+                <div className="chat-tip">⚡ תגובה מהירה</div>
+                <div className="chat-tip">🔔 התראות בזמן אמת</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
