@@ -13,22 +13,25 @@ export default function ChatPage() {
   const [lightbox, setLightbox] = useState(null);
   const [otherTyping, setOtherTyping] = useState(false);
   const prevMessageCount = useRef(0);
-
-  const playSound = () => {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.setValueAtTime(880, ctx.currentTime);
-    o.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-    g.gain.setValueAtTime(0.3, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    o.start(ctx.currentTime);
-    o.stop(ctx.currentTime + 0.3);
-  };
+  const typingTimeoutRef = useRef(null);
   const messagesRef = useRef();
   const imageInputRef = useRef();
   const navigate = useNavigate();
+
+  const playSound = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(880, ctx.currentTime);
+      o.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+      g.gain.setValueAtTime(0.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.3);
+    } catch (e) {}
+  };
 
   const getName = (id) => localStorage.getItem(`chat_name_${id}`) || '';
   const displayName = getName(targetId);
