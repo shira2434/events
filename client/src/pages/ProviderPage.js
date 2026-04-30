@@ -138,7 +138,8 @@ const CATEGORY_ICON = {
 function getDemoPortfolio(provider) {
   const pool = DEMO_PORTFOLIO[provider.Category];
   if (!pool) return [];
-  const offset = (provider.Id * 2) % pool.length;
+  // hash the ID to get a more varied offset
+  const offset = (provider.Id * 7 + 3) % pool.length;
   const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
   const unique = [...new Map(rotated.map(u => [u, u])).values()];
   return unique.slice(0, 6).map(url => ({ FilePath: url, isDemo: true }));

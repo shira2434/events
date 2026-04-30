@@ -84,10 +84,10 @@ const STATS = [
   { value: '100%', label: 'שביעות רצון' },
 ];
 
-function getImageForProvider(provider, index) {
+function getImageForProvider(provider) {
   const images = CATEGORY_IMAGES[provider.Category];
   if (!images) return null;
-  return images[index % images.length];
+  return images[provider.Id % images.length];
 }
 
 function SkeletonCard() {
@@ -200,7 +200,7 @@ export default function HomePage() {
         {loading
           ? Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
           : filtered.map((p, i) => {
-              const img = getImageForProvider(p, i);
+              const img = getImageForProvider(p);
               return (
                 <Link
                   to={`/provider/${p.Id}`}
