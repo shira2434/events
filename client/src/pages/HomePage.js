@@ -71,52 +71,6 @@ const CATEGORY_IMAGES = {
     'https://images.pexels.com/photos/1854652/pexels-photo-1854652.jpeg?auto=compress&w=600&h=400&fit=crop',
   ],
 };
-  'צלם': [
-    'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/3014856/pexels-photo-3014856.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/2253870/pexels-photo-2253870.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'מאפרת': [
-    'https://images.pexels.com/photos/3065209/pexels-photo-3065209.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/2681751/pexels-photo-2681751.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/1813346/pexels-photo-1813346.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'קייטרינג': [
-    'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/2291367/pexels-photo-2291367.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'DJ': [
-    'https://images.pexels.com/photos/1540406/pexels-photo-1540406.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/2111015/pexels-photo-2111015.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'פרחים': [
-    'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/1128678/pexels-photo-1128678.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'אולם': [
-    'https://images.pexels.com/photos/169193/pexels-photo-169193.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/1024960/pexels-photo-1024960.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/265920/pexels-photo-265920.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'תכשיטים': [
-    'https://images.pexels.com/photos/1458867/pexels-photo-1458867.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/691046/pexels-photo-691046.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'הסעות': [
-    'https://images.pexels.com/photos/1178448/pexels-photo-1178448.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-  'עוגות': [
-    'https://images.pexels.com/photos/1702373/pexels-photo-1702373.jpeg?auto=compress&w=600&h=400&fit=crop',
-    'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&w=600&h=400&fit=crop',
-  ],
-};
 
 const CATEGORY_ICON = {
   'צלם': '📸', 'מאפרת': '💄', 'קייטרינג': '🍽️', 'DJ': '🎧',
