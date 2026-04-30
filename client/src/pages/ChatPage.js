@@ -40,8 +40,8 @@ export default function ChatPage() {
     const r = await api.get('/chat');
     setConversations(r.data);
     r.data.forEach(c => {
-      if (!localStorage.getItem(`chat_name_${c.OtherUserId}`))
-        localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
+      // שמור תמיד את העדכון האחרון מהשרת
+      localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
     });
     return r.data;
   };
