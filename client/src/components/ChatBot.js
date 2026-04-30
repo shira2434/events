@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../api';
 
 const CATEGORIES = {
   'צלם': { icon: '📸', price: '₪2,200–₪3,500', desc: 'צילום חתונות, בר/בת מצווה ואירועים. עריכה מקצועית.' },
