@@ -35,7 +35,7 @@ export default function Navbar() {
       setUnread(total);
     }).catch(() => {});
     check();
-    const interval = setInterval(check, 10000);
+    const interval = setInterval(check, 3000);
     return () => clearInterval(interval);
   }, [user]);
 
