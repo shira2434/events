@@ -18,7 +18,7 @@ export default function ChatPage() {
   const imageInputRef = useRef();
   const navigate = useNavigate();
 
-  const playSound = () => {
+  const playSound = () => { // eslint-disable-line no-unused-vars
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const o = ctx.createOscillator();
