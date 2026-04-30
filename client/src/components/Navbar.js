@@ -9,10 +9,29 @@ export default function Navbar() {
   const location = useLocation();
   const [unread, setUnread] = useState(0);
 
+  const prevUnread = useRef(0);
+
+  const playNotif = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(880, ctx.currentTime);
+      o.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+      g.gain.setValueAtTime(0.2, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.3);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     if (!user) return;
     const check = () => api.get('/chat').then(r => {
       const total = r.data.reduce((s, c) => s + (c.UnreadCount || 0), 0);
+      if (total > prevUnread.current) playNotif();
+      prevUnread.current = total;
       setUnread(total);
     }).catch(() => {});
     check();
