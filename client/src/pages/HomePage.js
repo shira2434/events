@@ -166,17 +166,25 @@ function SkeletonCard() {
 }
 
 export default function HomePage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { categories, catMap } = useCategories();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'הכל');
-  const [minRating, setMinRating] = useState('');
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [sortBy, setSortBy] = useState('');
+  const [activeCategory, setActiveCategory] = useState(() => {
+    return searchParams.get('category') || sessionStorage.getItem('hp_category') || 'הכל';
+  });
+  const [minRating, setMinRating] = useState(() => sessionStorage.getItem('hp_minRating') || '');
+  const [search, setSearch] = useState(() => sessionStorage.getItem('hp_search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => sessionStorage.getItem('hp_search') || '');
+  const [sortBy, setSortBy] = useState(() => sessionStorage.getItem('hp_sortBy') || '');
   const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('favorites') || '[]'));
   const [hoveredCard, setHoveredCard] = useState(null);
+
+  // שמור מצב פילטרים ב-sessionStorage
+  useEffect(() => { sessionStorage.setItem('hp_category', activeCategory); }, [activeCategory]);
+  useEffect(() => { sessionStorage.setItem('hp_minRating', minRating); }, [minRating]);
+  useEffect(() => { sessionStorage.setItem('hp_sortBy', sortBy); }, [sortBy]);
+  useEffect(() => { sessionStorage.setItem('hp_search', search); }, [search]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -192,8 +200,8 @@ export default function HomePage() {
   };
   useEffect(() => {
     const cat = searchParams.get('category');
-    if (cat) setActiveCategory(cat);
-  }, [searchParams]);
+    if (cat && cat !== activeCategory) setActiveCategory(cat);
+  }, [searchParams]); // eslint-disable-line
 
   useEffect(() => {
     setLoading(true);
@@ -293,7 +301,13 @@ export default function HomePage() {
           <option value="new">מיון: חדש</option>
         </select>
         {(minRating || sortBy || activeCategory !== 'הכל' || search) && (
-          <button className="clear-filters" onClick={() => { setMinRating(''); setSortBy(''); setActiveCategory('הכל'); setSearch(''); }}>
+          <button className="clear-filters" onClick={() => {
+            setMinRating(''); setSortBy(''); setActiveCategory('הכל'); setSearch('');
+            sessionStorage.removeItem('hp_category');
+            sessionStorage.removeItem('hp_minRating');
+            sessionStorage.removeItem('hp_sortBy');
+            sessionStorage.removeItem('hp_search');
+          }}>
             נקה פילטרים ✕
           </button>
         )}
@@ -331,10 +345,10 @@ export default function HomePage() {
                     <div className="card-category-float">
                       <span>{getIcon(p.Category)}</span> {p.Category}
                     </div>
+                    {isNew(p) && <div className="card-new-badge">✨ חדש</div>}
                     {p.AverageRating > 0 && (
                       <div className="card-rating-float">⭐ {p.AverageRating.toFixed(1)}</div>
                     )}
-                    {isNew(p) && <div className="card-new-badge">✨ חדש</div>}
                     <button
                       className={`card-fav-btn ${favorites.includes(p.Id) ? 'active' : ''}`}
                       onClick={(e) => toggleFavorite(e, p.Id)}
