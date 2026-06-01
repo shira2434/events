@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useCategories } from '../context/CategoriesContext';
 
 const AREAS = ['תל אביב והמרכז', 'ירושלים והסביבה', 'חיפה והצפון', 'הצפון', 'הדרום', 'השרון', 'המרכז', 'כל הארץ'];
 const EMPTY_PROVIDER = { BusinessName: '', Category: '', Description: '', WorkArea: '', PriceFrom: '', Email: '', Password: '' };
 
 export default function AdminPage() {
   const navigate = useNavigate();
+  const { reload: reloadCategories } = useCategories();
   const [tab, setTab] = useState('stats');
   const [stats, setStats] = useState(null);
   const [providers, setProviders] = useState([]);
@@ -163,6 +165,7 @@ export default function AdminPage() {
     await api.put(`/admin/categories/${cat.Id}`, { name: cat.Name, icon: cat.Icon, bannerUrl: cat.BannerUrl });
     setEditCat(null);
     refreshCategories();
+    reloadCategories();
   };
 
   const filteredProviders = providers.filter(p =>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { CategoriesProvider } from './context/CategoriesContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -26,6 +27,7 @@ function ScrollToTop() {
 export default function App() {
   return (
     <AuthProvider>
+      <CategoriesProvider>
       <BrowserRouter>
         <ScrollToTop />
         <Navbar />
@@ -48,6 +50,7 @@ export default function App() {
         <Footer />
         <ChatBot />
       </BrowserRouter>
+      </CategoriesProvider>
     </AuthProvider>
   );
 }

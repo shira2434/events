@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useCategories } from '../context/CategoriesContext';
 
 const CATEGORY_BANNER = {
   'צלם':     'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&w=1200&h=400&fit=crop',
@@ -163,9 +164,9 @@ function StarRating({ value, onChange }) {
 export default function ProviderPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { catMap } = useCategories();
   const navigate = useNavigate();
   const [provider, setProvider] = useState(null);
-  const [categories, setCategories] = useState({});
   const [review, setReview] = useState({ rating: 5, comment: '' });
   const [lightbox, setLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -174,11 +175,6 @@ export default function ProviderPage() {
 
   useEffect(() => {
     api.get(`/providers/${id}`).then(r => setProvider(r.data));
-    api.get('/providers/categories/all').then(r => {
-      const map = {};
-      r.data.forEach(c => { map[c.Name] = c; });
-      setCategories(map);
-    }).catch(() => {});
   }, [id]);
 
   const sendMessage = async () => {
@@ -208,8 +204,8 @@ export default function ProviderPage() {
     </div>
   );
 
-  const icon = (categories[provider.Category]?.Icon) || CATEGORY_ICON[provider.Category] || '🎉';
-  const bannerImg = categories[provider.Category]?.BannerUrl || CATEGORY_BANNER[provider.Category];
+  const icon = catMap[provider.Category]?.Icon || CATEGORY_ICON[provider.Category] || '🎉';
+  const bannerImg = catMap[provider.Category]?.BannerUrl || CATEGORY_BANNER[provider.Category];
   const portfolioItems = provider.portfolio?.length > 0 ? provider.portfolio : getDemoPortfolio(provider);
   const allImages = portfolioItems.map(m =>
     m.isDemo ? m.FilePath : (m.FilePath.startsWith('http') ? m.FilePath : `http://localhost:5000${m.FilePath}`)

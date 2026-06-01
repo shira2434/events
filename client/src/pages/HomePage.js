@@ -1,19 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
-
-const CATEGORIES = [
-  { name: 'הכל', icon: '✨' },
-  { name: 'צלם', icon: '📸' },
-  { name: 'מאפרת', icon: '💄' },
-  { name: 'קייטרינג', icon: '🍽️' },
-  { name: 'DJ', icon: '🎧' },
-  { name: 'פרחים', icon: '💐' },
-  { name: 'אולם', icon: '🏛️' },
-  { name: 'תכשיטים', icon: '💍' },
-  { name: 'הסעות', icon: '🚌' },
-  { name: 'עוגות', icon: '🎂' },
-];
+import { useCategories } from '../context/CategoriesContext';
 
 const CATEGORY_IMAGES = {
   'צלם': [
@@ -178,11 +166,20 @@ function SkeletonCard() {
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
+  const { categories, catMap } = useCategories();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'הכל');
   const [minRating, setMinRating] = useState('');
   const [search, setSearch] = useState('');
+
+  const allCats = [{ Name: 'הכל', Icon: '✨' }, ...categories];
+  const getIcon = (cat) => catMap[cat]?.Icon || CATEGORY_ICON[cat] || '🎉';
+  const getCardImage = (p) => {
+    if (catMap[p.Category]?.BannerUrl) return catMap[p.Category].BannerUrl;
+    const imgs = CATEGORY_IMAGES[p.Category];
+    return imgs ? imgs[p.Id % imgs.length] : null;
+  };
 
   useEffect(() => {
     const cat = searchParams.get('category');
@@ -246,13 +243,13 @@ export default function HomePage() {
 
       {/* Categories */}
       <div className="categories">
-        {CATEGORIES.map(c => (
+        {allCats.map(c => (
           <button
-            key={c.name}
-            className={`cat-pill ${activeCategory === c.name ? 'active' : ''}`}
-            onClick={() => setActiveCategory(c.name)}
+            key={c.Name}
+            className={`cat-pill ${activeCategory === c.Name ? 'active' : ''}`}
+            onClick={() => setActiveCategory(c.Name)}
           >
-            <span>{c.icon}</span> {c.name}
+            <span>{c.Icon}</span> {c.Name}
           </button>
         ))}
       </div>
@@ -278,7 +275,6 @@ export default function HomePage() {
         {loading
           ? Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
           : filtered.map((p, i) => {
-              const img = getImageForProvider(p);
               return (
                 <Link
                   to={`/provider/${p.Id}`}
@@ -287,13 +283,13 @@ export default function HomePage() {
                   style={{ animationDelay: `${i * 0.05}s` }}
                 >
                   <div className="card-image-wrap">
-                    {img
-                      ? <img className="card-image" src={img} alt={p.Category} loading="lazy" />
-                      : <div className="card-image-placeholder">{CATEGORY_ICON[p.Category] || '🎉'}</div>
+                    {getCardImage(p)
+                      ? <img className="card-image" src={getCardImage(p)} alt={p.Category} loading="lazy" />
+                      : <div className="card-image-placeholder">{getIcon(p.Category)}</div>
                     }
                     <div className="card-image-overlay" />
                     <div className="card-category-float">
-                      <span>{CATEGORY_ICON[p.Category]}</span> {p.Category}
+                      <span>{getIcon(p.Category)}</span> {p.Category}
                     </div>
                     {p.AverageRating > 0 && (
                       <div className="card-rating-float">⭐ {p.AverageRating.toFixed(1)}</div>
