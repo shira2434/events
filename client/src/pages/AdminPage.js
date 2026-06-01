@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 const CATEGORIES = ['צלם', 'מאפרת', 'קייטרינג', 'DJ', 'פרחים', 'אולם', 'תכשיטים', 'הסעות', 'עוגות'];
+const AREAS = ['תל אביב והמרכז', 'ירושלים והסביבה', 'חיפה והצפון', 'הצפון', 'הדרום', 'השרון', 'המרכז', 'כל הארץ'];
+
+const EMPTY_PROVIDER = { BusinessName: '', Category: '', Description: '', WorkArea: '', PriceFrom: '', Email: '', Password: '' };
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -17,7 +20,12 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showAddProvider, setShowAddProvider] = useState(false);
+  const [newProvider, setNewProvider] = useState(EMPTY_PROVIDER);
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState('');
   const imageInputRef = useRef();
+  const multiImageRef = useRef();
 
   useEffect(() => {
     api.get('/admin/stats').then(r => setStats(r.data)).catch(() => navigate('/'));
@@ -35,14 +43,17 @@ export default function AdminPage() {
   };
 
   const uploadImage = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    await api.post(`/admin/providers/${selectedProvider.Id}/images`, formData);
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('image', file);
+      await api.post(`/admin/providers/${selectedProvider.Id}/images`, formData);
+    }
     const r = await api.get(`/admin/providers/${selectedProvider.Id}/images`);
     setImages(r.data);
+    api.get('/admin/providers').then(r => setProviders(r.data));
     setUploading(false);
     e.target.value = '';
   };
@@ -66,6 +77,35 @@ export default function AdminPage() {
     api.get('/admin/providers').then(r => setProviders(r.data));
   };
 
+  const addProvider = async (e) => {
+    e.preventDefault();
+    setAddError('');
+    setAdding(true);
+    try {
+      // 1. צור משתמש
+      const { data } = await api.post('/auth/register', {
+        email: newProvider.Email,
+        password: newProvider.Password,
+        role: 'Provider'
+      });
+      // 2. צור פרופיל ספק עם ה-token החדש
+      await api.put('/providers/settings', {
+        businessName: newProvider.BusinessName,
+        category: newProvider.Category,
+        description: newProvider.Description,
+        workArea: newProvider.WorkArea,
+        priceFrom: newProvider.PriceFrom,
+      }, { headers: { Authorization: `Bearer ${data.token}` } });
+      setNewProvider(EMPTY_PROVIDER);
+      setShowAddProvider(false);
+      api.get('/admin/providers').then(r => setProviders(r.data));
+      api.get('/admin/stats').then(r => setStats(r.data));
+    } catch (err) {
+      setAddError(err.response?.data?.message || 'שגיאה ביצירת הספק');
+    }
+    setAdding(false);
+  };
+
   const doDelete = async () => {
     if (confirmDelete.type === 'provider') {
       await api.delete(`/admin/providers/${confirmDelete.id}`);
@@ -77,6 +117,7 @@ export default function AdminPage() {
       setUsers(prev => prev.filter(u => u.Id !== confirmDelete.id));
     }
     setConfirmDelete(null);
+    api.get('/admin/stats').then(r => setStats(r.data));
   };
 
   const filteredProviders = providers.filter(p =>
@@ -101,6 +142,45 @@ export default function AdminPage() {
         </div>
       )}
 
+      {showAddProvider && (
+        <div className="popup-overlay" onClick={() => setShowAddProvider(false)}>
+          <div className="popup-box admin-add-popup" onClick={e => e.stopPropagation()}>
+            <h3>➕ הוסף ספק חדש</h3>
+            {addError && <p className="error">{addError}</p>}
+            <form onSubmit={addProvider}>
+              <div className="form-row">
+                <div><label>אימייל</label><input type="email" placeholder="email@example.com" value={newProvider.Email} onChange={e => setNewProvider({...newProvider, Email: e.target.value})} required /></div>
+                <div><label>סיסמה</label><input type="password" placeholder="לפחות 6 תווים" value={newProvider.Password} onChange={e => setNewProvider({...newProvider, Password: e.target.value})} required /></div>
+              </div>
+              <div className="form-row">
+                <div><label>שם העסק</label><input placeholder="שם העסק" value={newProvider.BusinessName} onChange={e => setNewProvider({...newProvider, BusinessName: e.target.value})} required /></div>
+                <div><label>קטגוריה</label>
+                  <select value={newProvider.Category} onChange={e => setNewProvider({...newProvider, Category: e.target.value})} required>
+                    <option value="">בחר...</option>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div><label>אזור עבודה</label>
+                  <select value={newProvider.WorkArea} onChange={e => setNewProvider({...newProvider, WorkArea: e.target.value})}>
+                    <option value="">בחר...</option>
+                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div><label>מחיר התחלתי (₪)</label><input type="number" placeholder="0" value={newProvider.PriceFrom} onChange={e => setNewProvider({...newProvider, PriceFrom: e.target.value})} /></div>
+              </div>
+              <label>תיאור</label>
+              <textarea placeholder="תיאור העסק..." value={newProvider.Description} onChange={e => setNewProvider({...newProvider, Description: e.target.value})} />
+              <div className="popup-btns" style={{marginTop:'1rem'}}>
+                <button type="button" className="popup-cancel" onClick={() => setShowAddProvider(false)}>ביטול</button>
+                <button type="submit" className="btn-primary" disabled={adding}>{adding ? 'יוצר...' : 'צור ספק'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="admin-header">
         <button className="back-btn" onClick={() => navigate('/')}>← חזרה</button>
         <h1>🛡️ לוח ניהול</h1>
@@ -113,7 +193,6 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Stats */}
       {tab === 'stats' && stats && (
         <div className="admin-stats-grid">
           {[
@@ -131,21 +210,21 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Providers */}
       {tab === 'providers' && (
         <div className="admin-content">
           <div className="admin-list">
             <div className="admin-search">
               <input placeholder="🔍 חפש ספק..." value={search} onChange={e => setSearch(e.target.value)} />
-              <span className="admin-count">{filteredProviders.length} ספקים</span>
+              <button className="btn-primary btn-sm" onClick={() => setShowAddProvider(true)}>+ הוסף</button>
             </div>
+            <div className="admin-count-bar">{filteredProviders.length} ספקים</div>
             <div className="admin-providers-list">
               {filteredProviders.map(p => (
                 <div key={p.Id} className={`admin-provider-item ${editProvider?.Id === p.Id ? 'active' : ''}`}>
                   <div className="admin-provider-info" onClick={() => { setEditProvider({...p}); setSelectedProvider(null); }}>
                     <strong>{p.BusinessName}</strong>
                     <span>{p.Category} • {p.WorkArea}</span>
-                    <span className="admin-img-count">🖼️ {p.ImageCount} תמונות</span>
+                    <span className="admin-img-count">🖼️ {p.ImageCount} תמונות • ⭐ {p.AverageRating?.toFixed(1) || '0'}</span>
                   </div>
                   <div className="admin-provider-actions">
                     <button className="admin-btn-img" onClick={() => { setEditProvider({...p}); openImages(p); }} title="ניהול תמונות">🖼️</button>
@@ -158,7 +237,7 @@ export default function AdminPage() {
 
           {editProvider && (
             <div className="admin-edit-panel">
-              <h3>✏️ עריכת {editProvider.BusinessName}</h3>
+              <h3>✏️ {editProvider.BusinessName}</h3>
               <form onSubmit={saveProvider}>
                 <label>שם העסק</label>
                 <input value={editProvider.BusinessName || ''} onChange={e => setEditProvider({...editProvider, BusinessName: e.target.value})} />
@@ -166,43 +245,50 @@ export default function AdminPage() {
                 <select value={editProvider.Category || ''} onChange={e => setEditProvider({...editProvider, Category: e.target.value})}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <label>תיאור</label>
-                <textarea value={editProvider.Description || ''} onChange={e => setEditProvider({...editProvider, Description: e.target.value})} />
                 <label>אזור עבודה</label>
-                <input value={editProvider.WorkArea || ''} onChange={e => setEditProvider({...editProvider, WorkArea: e.target.value})} />
+                <select value={editProvider.WorkArea || ''} onChange={e => setEditProvider({...editProvider, WorkArea: e.target.value})}>
+                  <option value="">בחר...</option>
+                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
                 <label>מחיר התחלתי (₪)</label>
                 <input type="number" value={editProvider.PriceFrom || ''} onChange={e => setEditProvider({...editProvider, PriceFrom: e.target.value})} />
+                <label>תיאור</label>
+                <textarea value={editProvider.Description || ''} onChange={e => setEditProvider({...editProvider, Description: e.target.value})} />
                 <button type="submit" className={`btn-primary ${saved ? 'btn-saved' : ''}`}>
                   {saved ? '✓ נשמר!' : 'שמור שינויים'}
                 </button>
               </form>
 
-              {selectedProvider?.Id === editProvider.Id && (
-                <div className="admin-images-section">
-                  <div className="admin-images-header">
-                    <h4>🖼️ תמונות ({images.length})</h4>
-                    <input type="file" accept="image/*" ref={imageInputRef} style={{ display: 'none' }} onChange={uploadImage} />
-                    <button className="btn-primary" onClick={() => imageInputRef.current.click()} disabled={uploading}>
-                      {uploading ? 'מעלה...' : '+ הוסף תמונה'}
+              <div className="admin-images-section">
+                <div className="admin-images-header">
+                  <h4>🖼️ תמונות ({selectedProvider?.Id === editProvider.Id ? images.length : '?'})</h4>
+                  <div style={{display:'flex',gap:'0.5rem'}}>
+                    <input type="file" accept="image/*" multiple ref={multiImageRef} style={{ display: 'none' }} onChange={uploadImage} />
+                    <button className="btn-primary btn-sm" onClick={() => { openImages(editProvider); multiImageRef.current.click(); }} disabled={uploading}>
+                      {uploading ? 'מעלה...' : '+ תמונות'}
                     </button>
+                    {selectedProvider?.Id !== editProvider.Id && (
+                      <button className="admin-btn-img" onClick={() => openImages(editProvider)}>טען תמונות</button>
+                    )}
                   </div>
+                </div>
+                {selectedProvider?.Id === editProvider.Id && (
                   <div className="admin-images-grid">
                     {images.map(img => (
                       <div key={img.Id} className="admin-image-item">
-                        <img src={img.FilePath.startsWith('http') ? img.FilePath : `https://events-production-6780.up.railway.app${img.FilePath}`} alt="" />
+                        <img src={img.FilePath.startsWith('data:') || img.FilePath.startsWith('http') ? img.FilePath : `https://events-szpi.onrender.com${img.FilePath}`} alt="" />
                         <button className="admin-img-delete" onClick={() => deleteImage(img.Id)}>✕</button>
                       </div>
                     ))}
-                    {images.length === 0 && <p className="admin-no-images">אין תמונות עדיין</p>}
+                    {images.length === 0 && <p className="admin-no-images">אין תמונות — לחץ "+ תמונות" להוספה</p>}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Users */}
       {tab === 'users' && (
         <div className="admin-users-table">
           <table>

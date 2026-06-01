@@ -34,15 +34,18 @@ export default function ChatPage() {
   };
 
   const getName = (id) => localStorage.getItem(`chat_name_${id}`) || '';
-  const displayName = getName(targetId);
+  const [displayName, setDisplayName] = useState(() => getName(targetId));
 
   const loadConversations = async () => {
     const r = await api.get('/chat');
     setConversations(r.data);
     r.data.forEach(c => {
-      // שמור תמיד את העדכון האחרון מהשרת
       localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
     });
+    if (targetId) {
+      const conv = r.data.find(c => c.OtherUserId === +targetId);
+      if (conv) setDisplayName(conv.Email);
+    }
     return r.data;
   };
 
