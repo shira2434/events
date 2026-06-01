@@ -8,8 +8,10 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [unread, setUnread] = useState(0);
-
+  const [menuOpen, setMenuOpen] = useState(false);
   const prevUnread = useRef(0);
+
+  useEffect(() => { setMenuOpen(false); }, [location]);
 
   const playNotif = () => {
     try {
@@ -53,13 +55,14 @@ export default function Navbar() {
         <Link to="/" className={`nav-link ${location.pathname === '/' ? 'nav-active' : ''}`}>דף הבית</Link>
         <Link to="/about" className={`nav-link ${isActive('/about') ? 'nav-active' : ''}`}>אודות</Link>
         <Link to="/contact" className={`nav-link ${isActive('/contact') ? 'nav-active' : ''}`}>צור קשר</Link>
+        <Link to="/favorites" className={`nav-link ${isActive('/favorites') ? 'nav-active' : ''}`}>❤️ מועדפים</Link>
       </div>
 
       <div className="nav-links">
         {!user && <>
           <Link to="/login" className={`nav-link ${isActive('/login') ? 'nav-active' : ''}`}>התחברות</Link>
           <Link to="/register" className="btn-primary btn-sm">הרשמה חינם</Link>
-        </>}
+        </> }
 
         {user && <>
           {user.role === 'Admin' && (
@@ -81,8 +84,31 @@ export default function Navbar() {
             </span>
           </Link>
           <button className="nav-logout-btn" onClick={handleLogout}>יציאה</button>
-        </>}
+        </> }
       </div>
+
+      {/* Mobile hamburger */}
+      <button className="nav-hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="תפריט">
+        <span /><span /><span />
+      </button>
+
+      {menuOpen && (
+        <div className="nav-mobile-menu">
+          <Link to="/">🏠 דף הבית</Link>
+          <Link to="/about">אודות</Link>
+          <Link to="/contact">צור קשר</Link>
+          <Link to="/favorites">❤️ מועדפים</Link>
+          {user ? <>
+            {user.role === 'Provider' && <Link to="/dashboard">⚙️ לוח בקרה</Link>}
+            <Link to="/chat">💬 הודעות {unread > 0 && `(${unread})`}</Link>
+            <Link to="/profile">👤 פרופיל</Link>
+            <button onClick={handleLogout}>יציאה</button>
+          </> : <>
+            <Link to="/login">התחברות</Link>
+            <Link to="/register">הרשמה</Link>
+          </> }
+        </div>
+      )}
     </nav>
   );
 }

@@ -2,11 +2,24 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+const helmet = require('helmet');
 
 const app = express();
 
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
 app.use(cors());
 app.use(express.json());
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { message: 'יותר מדי ניסיונות, נסה שוב בעוד 15 דקות' } });
+const reviewLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: { message: 'הגעת למגבלת הביקורות לשעה' } });
+const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { message: 'יותר מדי הודעות, האט קצת' } });
+
+app.use('/api/auth', authLimiter);
+app.use('/api/providers/:id/reviews', reviewLimiter);
+app.use('/api/chat', chatLimiter);
 
 // static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

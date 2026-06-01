@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useCategories } from '../context/CategoriesContext';
+import { useToast } from '../components/Toast';
 
 const CATEGORY_BANNER = {
   'צלם':     'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&w=1200&h=400&fit=crop',
@@ -166,6 +168,7 @@ export default function ProviderPage() {
   const { user } = useAuth();
   const { catMap } = useCategories();
   const navigate = useNavigate();
+  const toast = useToast();
   const [provider, setProvider] = useState(null);
   const [review, setReview] = useState({ rating: 5, comment: '' });
   const [lightbox, setLightbox] = useState(false);
@@ -188,13 +191,22 @@ export default function ProviderPage() {
 
   const submitReview = async (e) => {
     e.preventDefault();
+    if (!review.comment.trim() || review.comment.trim().length < 5) {
+      toast('ביקורת חייבת להכיל לפחות 5 תווים', 'error');
+      return;
+    }
     setSubmitting(true);
-    await api.post(`/providers/${id}/reviews`, review);
-    const r = await api.get(`/providers/${id}`);
-    setProvider(r.data);
-    setReview({ rating: 5, comment: '' });
+    try {
+      await api.post(`/providers/${id}/reviews`, review);
+      const r = await api.get(`/providers/${id}`);
+      setProvider(r.data);
+      setReview({ rating: 5, comment: '' });
+      setActiveTab('reviews');
+      toast('ההמלצה נשלחה בהצלחה! 🎉');
+    } catch (err) {
+      toast(err.response?.data?.message || 'שגיאה בשליחת ביקורת', 'error');
+    }
     setSubmitting(false);
-    setActiveTab('reviews');
   };
 
   if (!provider) return (
@@ -210,6 +222,17 @@ export default function ProviderPage() {
   const allImages = portfolioItems.map(m =>
     m.isDemo ? m.FilePath : (m.FilePath.startsWith('http') ? m.FilePath : `http://localhost:5000${m.FilePath}`)
   );
+  const avatarImg = allImages[0];
+
+  const shareProvider = () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: provider.BusinessName, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      alert('הקישור הועתק!');
+    }
+  };
 
   const openLightbox = (i) => { setLightboxIndex(i); setLightbox(true); };
   const prev = (e) => { e.stopPropagation(); setLightboxIndex(i => (i - 1 + allImages.length) % allImages.length); };
@@ -217,6 +240,13 @@ export default function ProviderPage() {
 
   return (
     <div className="provider-page">
+      <Helmet>
+        <title>{provider.BusinessName} | EventPro</title>
+        <meta name="description" content={`${provider.BusinessName} - ${provider.Category} ב${provider.WorkArea}. ${provider.Description || ''}`} />
+        <meta property="og:title" content={`${provider.BusinessName} | EventPro`} />
+        <meta property="og:description" content={provider.Description || `${provider.Category} ב${provider.WorkArea}`} />
+        {avatarImg && <meta property="og:image" content={avatarImg} />}
+      </Helmet>
       <button className="back-btn" onClick={() => navigate(-1)}>← חזרה</button>
 
       <div className="provider-banner" style={bannerImg ? { backgroundImage: `url(${bannerImg})` } : {}}>
@@ -224,7 +254,12 @@ export default function ProviderPage() {
       </div>
 
       <div className="provider-profile-card">
-        <div className="provider-avatar">{icon}</div>
+        <div className="provider-avatar">
+          {avatarImg
+            ? <img src={avatarImg} alt={provider.BusinessName} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'inherit'}} />
+            : icon
+          }
+        </div>
         <div className="provider-info">
           <div className="provider-meta-top">
             <span className="category-badge">{provider.Category}</span>
@@ -240,6 +275,7 @@ export default function ProviderPage() {
         </div>
         <div className="provider-cta">
           <button className="btn-primary btn-lg" onClick={sendMessage}>💬 שלח הודעה</button>
+          <button className="btn-share" onClick={shareProvider}>🔗 שתף</button>
         </div>
       </div>
 
@@ -276,11 +312,16 @@ export default function ProviderPage() {
                 {provider.reviews.map((r, i) => (
                   <div key={i} className="review-card">
                     <div className="review-header">
-                      <div className="review-avatar">{r.Email?.[0]?.toUpperCase()}</div>
-                      <div>
-                        <div className="review-email">{r.Email}</div>
+                      <div className="review-avatar">{(r.Name || r.Email)?.[0]?.toUpperCase()}</div>
+                      <div style={{flex:1}}>
+                        <div className="review-email">{r.Name || r.Email?.split('@')[0]}</div>
                         <div className="review-stars">{'★'.repeat(r.Rating)}{'☆'.repeat(5 - r.Rating)}</div>
                       </div>
+                      {r.CreatedAt && (
+                        <div style={{fontSize:'0.75rem',color:'#bbb'}}>
+                          {new Date(r.CreatedAt).toLocaleDateString('he-IL')}
+                        </div>
+                      )}
                     </div>
                     <p className="review-comment">{r.Comment}</p>
                   </div>

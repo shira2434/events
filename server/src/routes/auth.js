@@ -7,6 +7,10 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   const { email, password, role, fullName } = req.body;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return res.status(400).json({ message: 'אימייל לא תקין' });
+  if (!password || password.length < 6)
+    return res.status(400).json({ message: 'סיסמא חייבת להכיל לפחות 6 תווים' });
   if (!['Customer', 'Provider'].includes(role))
     return res.status(400).json({ message: 'Invalid role' });
   try {

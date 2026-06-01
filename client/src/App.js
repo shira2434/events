@@ -1,7 +1,11 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { CategoriesProvider } from './context/CategoriesContext';
+import { ToastProvider } from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
+import ScrollToTopButton from './components/ScrollToTopButton';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,6 +19,7 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import FavoritesPage from './pages/FavoritesPage';
 import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
 
@@ -26,8 +31,11 @@ function ScrollToTop() {
 
 export default function App() {
   return (
+    <HelmetProvider>
+    <ErrorBoundary>
     <AuthProvider>
       <CategoriesProvider>
+      <ToastProvider>
       <BrowserRouter>
         <ScrollToTop />
         <Navbar />
@@ -44,13 +52,18 @@ export default function App() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="Admin"><AdminPage /></ProtectedRoute>} />
+            <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
         <Footer />
         <ChatBot />
+        <ScrollToTopButton />
       </BrowserRouter>
+      </ToastProvider>
       </CategoriesProvider>
     </AuthProvider>
+    </ErrorBoundary>
+    </HelmetProvider>
   );
 }

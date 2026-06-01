@@ -9,6 +9,7 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [otherTyping, setOtherTyping] = useState(false);
@@ -119,9 +120,13 @@ export default function ChatPage() {
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-    const { data } = await api.post('/chat', { receiverId: +targetId, content: text });
+    const content = replyTo
+      ? `__REPLY__${replyTo.id}__${replyTo.preview}__END__${text}`
+      : text;
+    const { data } = await api.post('/chat', { receiverId: +targetId, content });
     setMessages(prev => [...prev, data]);
     setText('');
+    setReplyTo(null);
     loadConversations();
   };
 
@@ -148,12 +153,30 @@ export default function ChatPage() {
 
   const myId = user?.token ? JSON.parse(atob(user.token.split('.')[1])).id : null;
 
+  const parseReply = (content) => {
+    if (!content?.startsWith('__REPLY__')) return { reply: null, text: content };
+    const match = content.match(/^__REPLY__(\d+)__(.+?)__END__(.*)$/s);
+    if (!match) return { reply: null, text: content };
+    return { reply: { id: match[1], preview: match[2] }, text: match[3] };
+  };
+
   const renderContent = (m) => {
     if (m.Content?.startsWith('__IMAGE__')) {
       const src = m.Content.replace('__IMAGE__', '');
       return <img src={src} alt="תמונה" className="chat-img" onClick={() => setLightbox(src)} />;
     }
-    return <p>{m.Content}</p>;
+    const { reply, text } = parseReply(m.Content);
+    return (
+      <>
+        {reply && (
+          <div className="msg-reply-quote">
+            <span className="msg-reply-bar" />
+            <span className="msg-reply-text">{reply.preview}</span>
+          </div>
+        )}
+        <p>{text}</p>
+      </>
+    );
   };
 
   return (
@@ -221,6 +244,7 @@ export default function ChatPage() {
                 const isMine = m.SenderId === myId;
                 const isImg = m.Content?.startsWith('__IMAGE__');
                 const showAvatar = !isMine && (i === 0 || messages[i-1]?.SenderId !== m.SenderId);
+                const previewText = isImg ? '📷 תמונה' : (parseReply(m.Content).text?.slice(0, 60) || '');
                 return (
                   <div key={m.Id || i} className={`message ${isMine ? 'mine' : 'theirs'}`}>
                     {!isMine && (
@@ -229,7 +253,14 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div className="msg-content">
-                      <div className={isImg ? 'msg-img-wrap' : ''}>{renderContent(m)}</div>
+                      <div className={`msg-bubble-wrap ${isImg ? 'msg-img-wrap' : ''}`}>
+                        {renderContent(m)}
+                        <button
+                          className="msg-reply-btn"
+                          onClick={() => setReplyTo({ id: m.Id, preview: previewText })}
+                          title="הגב תגובה"
+                        >↩️</button>
+                      </div>
                       <span>{new Date(m.SentAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
@@ -248,10 +279,19 @@ export default function ChatPage() {
             </div>
 
             <form className="message-input" onSubmit={sendMessage}>
-              <input type="file" accept="image/*" ref={imageInputRef} style={{ display: 'none' }} onChange={sendImage} />
-              <button type="button" className="img-btn" onClick={() => imageInputRef.current.click()} title="שלח תמונה">📷</button>
-              <input value={text} onChange={e => handleTyping(e.target.value)} placeholder="כתוב הודעה..." autoFocus />
-              <button type="submit" className="send-btn" disabled={!text.trim()}>שלח ➤</button>
+              {replyTo && (
+                <div className="reply-preview">
+                  <span className="reply-preview-bar" />
+                  <span className="reply-preview-text">{replyTo.preview}</span>
+                  <button type="button" className="reply-preview-close" onClick={() => setReplyTo(null)}>✕</button>
+                </div>
+              )}
+              <div className="message-input-row">
+                <input type="file" accept="image/*" ref={imageInputRef} style={{ display: 'none' }} onChange={sendImage} />
+                <button type="button" className="img-btn" onClick={() => imageInputRef.current.click()} title="שלח תמונה">📷</button>
+                <input value={text} onChange={e => handleTyping(e.target.value)} placeholder={replyTo ? 'כתוב תגובה...' : 'כתוב הודעה...'} autoFocus />
+                <button type="submit" className="send-btn" disabled={!text.trim()}>שלח ➤</button>
+              </div>
             </form>
           </>
         ) : (

@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useToast } from '../components/Toast';
 
 const CATEGORIES = ['צלם', 'מאפרת', 'קייטרינג', 'DJ', 'פרחים', 'אולם', 'תכשיטים', 'הסעות', 'עוגות'];
 const CATEGORY_ICONS = { 'צלם': '📸', 'מאפרת': '💄', 'קייטרינג': '🍽️', 'DJ': '🎧', 'פרחים': '💐', 'אולם': '🏛️', 'תכשיטים': '💍', 'הסעות': '🚌', 'עוגות': '🎂' };
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [settings, setSettings] = useState({ businessName: '', category: '', description: '', workArea: '', priceFrom: '' });
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -14,7 +16,6 @@ export default function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [isNew, setIsNew] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef();
 
   useEffect(() => {
@@ -38,40 +39,31 @@ export default function DashboardPage() {
 
   const saveSettings = async (e) => {
     e.preventDefault();
-    await api.put('/providers/settings', settings);
-    setSaved(true);
-    setIsNew(false);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      await api.put('/providers/settings', settings);
+      setSaved(true);
+      setIsNew(false);
+      toast('פרטי העסק נשמרו בהצלחה ✅');
+      setTimeout(() => setSaved(false), 2500);
+    } catch { toast('שגיאה בשמירה', 'error'); }
   };
 
   const uploadFiles = async (e) => {
     e.preventDefault();
     setUploading(true);
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
-    await api.post('/portfolio', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-    setFiles([]);
-    setPreviews([]);
+    try {
+      const formData = new FormData();
+      files.forEach(f => formData.append('files', f));
+      await api.post('/portfolio', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setFiles([]);
+      setPreviews([]);
+      toast(`הועלו ${files.length} תמונות בהצלחה 🎉`);
+    } catch { toast('שגיאה בהעלאה', 'error'); }
     setUploading(false);
-    setUploadSuccess(true);
-    setTimeout(() => setUploadSuccess(false), 3000);
   };
 
   return (
     <div className="dashboard">
-      {uploadSuccess && (
-        <div className="popup-overlay" onClick={() => setUploadSuccess(false)}>
-          <div className="popup-box" onClick={e => e.stopPropagation()}>
-            <div className="popup-icon">✅</div>
-            <h3>הקבצים הועלו בהצלחה!</h3>
-            <p>התמונות נוספו לתיק העבודות שלך</p>
-            <div className="popup-btns">
-              <button className="popup-cancel" onClick={() => setUploadSuccess(false)}>סגור</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="dashboard-header">
         <button className="back-btn" onClick={() => navigate(-1)}>← חזרה</button>
         <h1>⚙️ לוח בקרה</h1>

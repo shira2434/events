@@ -42,18 +42,23 @@ router.put('/settings', authMiddleware, async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const { category, minRating } = req.query;
+  const { category, minRating, sortBy } = req.query;
   try {
-    let query = `SELECT p.Id, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email
+    let query = `SELECT p.Id, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, p.CreatedAt, u.Email,
+                 (SELECT COUNT(*) FROM Reviews r WHERE r.ProviderId = p.Id) AS ReviewCount
                  FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE 1=1`;
     const params = [];
     if (category) { params.push(category); query += ` AND p.Category = $${params.length}`; }
     if (minRating) { params.push(parseFloat(minRating)); query += ` AND p.AverageRating >= $${params.length}`; }
+    if (sortBy === 'rating') query += ' ORDER BY p.AverageRating DESC';
+    else if (sortBy === 'price') query += ' ORDER BY p.PriceFrom ASC NULLS LAST';
+    else if (sortBy === 'new') query += ' ORDER BY p.CreatedAt DESC';
     const result = await pool.query(query, params);
     res.json(result.rows.map(p => ({
       Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category,
       Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
-      AverageRating: p.averagerating || 0, Email: p.email
+      AverageRating: p.averagerating || 0, Email: p.email,
+      ReviewCount: parseInt(p.reviewcount) || 0, CreatedAt: p.createdat
     })));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -66,7 +71,7 @@ router.get('/:id', async (req, res) => {
       pool.query(`SELECT p.Id, p.UserId, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email
                   FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE p.Id = $1`, [req.params.id]),
       pool.query('SELECT FilePath FROM PortfolioMedia WHERE ProviderId = $1 ORDER BY UploadedAt DESC', [req.params.id]),
-      pool.query('SELECT r.Rating, r.Comment, r.CreatedAt, u.Email FROM Reviews r JOIN Users u ON r.CustomerId = u.Id WHERE r.ProviderId = $1 ORDER BY r.CreatedAt DESC', [req.params.id]),
+      pool.query('SELECT r.Rating, r.Comment, r.CreatedAt, u.Email, u.Name FROM Reviews r JOIN Users u ON r.CustomerId = u.Id WHERE r.ProviderId = $1 ORDER BY r.CreatedAt DESC', [req.params.id]),
     ]);
     if (!profile.rows[0]) return res.status(404).json({ message: 'Provider not found' });
     const p = profile.rows[0];
@@ -75,7 +80,7 @@ router.get('/:id', async (req, res) => {
       Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
       AverageRating: p.averagerating || 0, Email: p.email,
       portfolio: media.rows.map(r => ({ FilePath: r.filepath })),
-      reviews: reviews.rows.map(r => ({ Rating: r.rating, Comment: r.comment, Email: r.email, CreatedAt: r.createdat }))
+      reviews: reviews.rows.map(r => ({ Rating: r.rating, Comment: r.comment, Email: r.email, Name: r.name, CreatedAt: r.createdat }))
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -85,6 +90,9 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/reviews', authMiddleware, async (req, res) => {
   if (req.user.role !== 'Customer') return res.status(403).json({ message: 'Forbidden' });
   const { rating, comment } = req.body;
+  if (!rating || rating < 1 || rating > 5) return res.status(400).json({ message: 'דירוג חייב להיות בין 1 ל-5' });
+  if (!comment || comment.trim().length < 5) return res.status(400).json({ message: 'ביקורת חייבת להכיל לפחות 5 תווים' });
+  if (comment.length > 1000) return res.status(400).json({ message: 'ביקורת ארוכה מדי' });
   try {
     await pool.query(
       'INSERT INTO Reviews (ProviderId, CustomerId, Rating, Comment) VALUES ($1, $2, $3, $4)',

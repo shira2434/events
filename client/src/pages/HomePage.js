@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import { useCategories } from '../context/CategoriesContext';
 
@@ -144,10 +145,10 @@ const STATS = [
   { value: '100%', label: 'שביעות רצון' },
 ];
 
-function getImageForProvider(provider) {
-  const images = CATEGORY_IMAGES[provider.Category];
-  if (!images) return null;
-  return images[provider.Id % images.length];
+function getCardImage(p, catMap) {
+  if (catMap[p.Category]?.BannerUrl) return catMap[p.Category].BannerUrl;
+  const imgs = CATEGORY_IMAGES[p.Category];
+  return imgs ? imgs[p.Id % imgs.length] : null;
 }
 
 function SkeletonCard() {
@@ -172,6 +173,15 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'הכל');
   const [minRating, setMinRating] = useState('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortBy, setSortBy] = useState('');
+  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('favorites') || '[]'));
+  const [hoveredCard, setHoveredCard] = useState(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const allCats = [{ Name: 'הכל', Icon: '✨' }, ...categories];
   const getIcon = (cat) => catMap[cat]?.Icon || CATEGORY_ICON[cat] || '🎉';
@@ -180,7 +190,6 @@ export default function HomePage() {
     const imgs = CATEGORY_IMAGES[p.Category];
     return imgs ? imgs[p.Id % imgs.length] : null;
   };
-
   useEffect(() => {
     const cat = searchParams.get('category');
     if (cat) setActiveCategory(cat);
@@ -191,20 +200,36 @@ export default function HomePage() {
     const params = {};
     if (activeCategory !== 'הכל') params.category = activeCategory;
     if (minRating) params.minRating = minRating;
+    if (sortBy) params.sortBy = sortBy;
     api.get('/providers', { params })
       .then(r => setProviders(r.data))
       .finally(() => setLoading(false));
-  }, [activeCategory, minRating]);
+  }, [activeCategory, minRating, sortBy]);
 
-  const filtered = search
+  const filtered = debouncedSearch
     ? providers.filter(p =>
-        p.BusinessName?.toLowerCase().includes(search.toLowerCase()) ||
-        p.WorkArea?.toLowerCase().includes(search.toLowerCase())
+        p.BusinessName?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.WorkArea?.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     : providers;
 
+  const toggleFavorite = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = favorites.includes(id) ? favorites.filter(f => f !== id) : [...favorites, id];
+    setFavorites(next);
+    localStorage.setItem('favorites', JSON.stringify(next));
+  };
+
+  const isNew = (p) => !p.ReviewCount && p.CreatedAt &&
+    (Date.now() - new Date(p.CreatedAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
+
   return (
     <div>
+      <Helmet>
+        <title>EventPro - מרקטפלייס לאירועים</title>
+        <meta name="description" content="מצא צלמים, מאפרות, קייטרינג, DJ ועוד לאירוע שלך. אלפי ספקים מקצועיים בישראל." />
+      </Helmet>
       {/* Hero */}
       <div className="hero">
         <div className="hero-content">
@@ -262,8 +287,14 @@ export default function HomePage() {
           <option value="4">⭐ 4+ כוכבים</option>
           <option value="3">⭐ 3+ כוכבים</option>
         </select>
-        {(minRating || activeCategory !== 'הכל' || search) && (
-          <button className="clear-filters" onClick={() => { setMinRating(''); setActiveCategory('הכל'); setSearch(''); }}>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="">מיון: ברירת מחדל</option>
+          <option value="rating">מיון: דירוג גבוה</option>
+          <option value="price">מיון: מחיר נמוך</option>
+          <option value="new">מיון: חדש</option>
+        </select>
+        {(minRating || sortBy || activeCategory !== 'הכל' || search) && (
+          <button className="clear-filters" onClick={() => { setMinRating(''); setSortBy(''); setActiveCategory('הכל'); setSearch(''); }}>
             נקה פילטרים ✕
           </button>
         )}
@@ -281,10 +312,20 @@ export default function HomePage() {
                   key={p.Id}
                   className="provider-card"
                   style={{ animationDelay: `${i * 0.05}s` }}
+                  onMouseEnter={() => setHoveredCard(p.Id)}
+                  onMouseLeave={() => setHoveredCard(null)}
                 >
                   <div className="card-image-wrap">
                     {getCardImage(p)
-                      ? <img className="card-image" src={getCardImage(p)} alt={p.Category} loading="lazy" />
+                      ? <img
+                          className="card-image"
+                          src={hoveredCard === p.Id
+                            ? (CATEGORY_IMAGES[p.Category]?.[(p.Id + 1) % CATEGORY_IMAGES[p.Category]?.length] || getCardImage(p))
+                            : getCardImage(p)}
+                          alt={p.Category} loading="lazy"
+                          onLoad={e => e.target.classList.remove('loading')}
+                          style={{filter: 'blur(0)'}}
+                        />
                       : <div className="card-image-placeholder">{getIcon(p.Category)}</div>
                     }
                     <div className="card-image-overlay" />
@@ -294,6 +335,11 @@ export default function HomePage() {
                     {p.AverageRating > 0 && (
                       <div className="card-rating-float">⭐ {p.AverageRating.toFixed(1)}</div>
                     )}
+                    {isNew(p) && <div className="card-new-badge">✨ חדש</div>}
+                    <button
+                      className={`card-fav-btn ${favorites.includes(p.Id) ? 'active' : ''}`}
+                      onClick={(e) => toggleFavorite(e, p.Id)}
+                    >{favorites.includes(p.Id) ? '❤️' : '🤍'}</button>
                   </div>
                   <div className="card-body">
                     <h3>{p.BusinessName}</h3>
@@ -302,6 +348,7 @@ export default function HomePage() {
                       <span className="card-rating">
                         {'★'.repeat(Math.round(p.AverageRating || 0))}{'☆'.repeat(5 - Math.round(p.AverageRating || 0))}
                         <span className="card-rating-num">{p.AverageRating > 0 ? p.AverageRating.toFixed(1) : 'חדש'}</span>
+                        {p.ReviewCount > 0 && <span className="card-review-count">({p.ReviewCount})</span>}
                       </span>
                       {p.PriceFrom && <span className="card-price">החל מ-₪{Number(p.PriceFrom).toLocaleString()}</span>}
                     </div>
