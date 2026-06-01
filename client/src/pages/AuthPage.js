@@ -4,13 +4,14 @@ import api from '../api';
 import { useAuth } from '../context/AuthContext';
 
 const RULES = {
+  fullName: v => v.trim().length < 2 ? 'שם חייב להכיל לפחות 2 תווים' : '',
   email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : 'אימייל לא תקין',
   password: v => v.length < 6 ? 'סיסמה חייבת להכיל לפחות 6 תווים' : '',
   confirmPassword: (v, form) => v !== form.password ? 'הסיסמאות אינן תואמות' : '',
 };
 
 export default function AuthPage({ mode }) {
-  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', role: 'Customer' });
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', role: 'Customer' });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,7 @@ export default function AuthPage({ mode }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
-    const fields = mode === 'register' ? ['email', 'password', 'confirmPassword'] : ['email', 'password'];
+    const fields = mode === 'register' ? ['fullName', 'email', 'password', 'confirmPassword'] : ['email', 'password'];
     const newErrors = {};
     fields.forEach(f => { newErrors[f] = validate(f, form[f]); });
     setErrors(newErrors);
@@ -48,7 +49,7 @@ export default function AuthPage({ mode }) {
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
       const { data } = await api.post(endpoint, form);
-      login(data.token, data.role);
+      login(data.token, data.role, data.fullName, data.email || form.email);
       navigate(data.role === 'Provider' ? '/dashboard' : '/');
     } catch (err) {
       setServerError(err.response?.data?.message || 'שגיאה, נסה שוב');
@@ -88,6 +89,25 @@ export default function AuthPage({ mode }) {
           )}
 
           <form onSubmit={handleSubmit} noValidate>
+            {!isLogin && (
+              <div className={`auth-field ${touched.fullName && errors.fullName ? 'has-error' : touched.fullName && !errors.fullName ? 'has-success' : ''}`}>
+                <label>שם מלא</label>
+                <div className="auth-input-wrap">
+                  <span className="auth-input-icon">👤</span>
+                  <input
+                    type="text"
+                    placeholder="שם פרטי ומשפחה"
+                    value={form.fullName}
+                    onChange={e => handleChange('fullName', e.target.value)}
+                    onBlur={() => handleBlur('fullName')}
+                    autoComplete="name"
+                  />
+                  {touched.fullName && !errors.fullName && form.fullName && <span className="field-check">✓</span>}
+                </div>
+                {touched.fullName && errors.fullName && <span className="field-error">{errors.fullName}</span>}
+              </div>
+            )}
+
             <div className={`auth-field ${touched.email && errors.email ? 'has-error' : touched.email && !errors.email ? 'has-success' : ''}`}>
               <label>אימייל</label>
               <div className="auth-input-wrap">

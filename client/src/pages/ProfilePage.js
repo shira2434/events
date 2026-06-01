@@ -27,7 +27,8 @@ export default function ProfilePage() {
 
   const handleLogout = () => { logout(); navigate('/'); };
 
-  const initial = user?.email?.[0]?.toUpperCase() || '?';
+  const initial = user?.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?';
+  const displayName = user?.fullName || user?.email?.split('@')[0];
   const isProvider = user?.role === 'Provider';
 
   return (
@@ -35,7 +36,8 @@ export default function ProfilePage() {
       <div className="profile-header-card">
         <div className={`profile-avatar-lg ${isProvider ? 'provider-avatar-color' : ''}`}>{initial}</div>
         <div>
-          <h1>{user?.email}</h1>
+          <h1>{displayName}</h1>
+          <p style={{opacity:0.8, fontSize:'0.9rem', marginTop:'0.25rem'}}>{user?.email}</p>
           <span className={`role-badge ${isProvider ? 'role-provider' : 'role-customer'}`}>
             {isProvider ? '🏢 ספק' : '👤 לקוח'}
           </span>
@@ -74,6 +76,10 @@ export default function ProfilePage() {
         <div className="dashboard-section">
           <h2>⚙️ הגדרות חשבון</h2>
           <div className="account-info">
+            <div className="account-info-row">
+              <span>שם</span>
+              <strong>{user?.fullName || 'לא צוין'}</strong>
+            </div>
             <div className="account-info-row">
               <span>אימייל</span>
               <strong>{user?.email}</strong>

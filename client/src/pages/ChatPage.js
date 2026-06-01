@@ -34,20 +34,22 @@ export default function ChatPage() {
   };
 
   const getName = (id) => localStorage.getItem(`chat_name_${id}`) || '';
-  const [displayName, setDisplayName] = useState(() => getName(targetId));
 
   const loadConversations = async () => {
     const r = await api.get('/chat');
     setConversations(r.data);
     r.data.forEach(c => {
-      localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
+      if (c.BusinessName) localStorage.setItem(`chat_name_${c.OtherUserId}`, c.BusinessName);
+      else localStorage.setItem(`chat_name_${c.OtherUserId}`, c.Email);
     });
-    if (targetId) {
-      const conv = r.data.find(c => c.OtherUserId === +targetId);
-      if (conv) setDisplayName(conv.Email);
-    }
     return r.data;
   };
+
+  const displayName = (() => {
+    const conv = conversations.find(c => c.OtherUserId === +targetId);
+    if (conv) return conv.BusinessName || conv.FullName || conv.Email?.split('@')[0] || '';
+    return getName(targetId);
+  })();
 
   useEffect(() => {
     loadConversations();
@@ -181,7 +183,7 @@ export default function ChatPage() {
         <button className="back-btn back-btn-chat" onClick={() => navigate(-1)}>← חזרה</button>
         <h3>💬 שיחות</h3>
         {conversations.map(c => {
-          const name = localStorage.getItem(`chat_name_${c.OtherUserId}`) || c.Email;
+          const name = c.BusinessName || c.FullName || c.Email?.split('@')[0] || c.Email;
           return (
             <div key={c.OtherUserId} className={`conv-item ${+targetId === c.OtherUserId ? 'active' : ''}`}>
               <Link to={`/chat/${c.OtherUserId}`} className="conv-item-link">

@@ -74,8 +74,11 @@ export default function Navbar() {
           </Link>
           <Link to="/profile" className={`nav-user ${isActive('/profile') ? 'nav-active' : ''}`}>
             <div className={`nav-avatar ${user.role === 'Provider' ? 'provider-avatar-color' : ''}`}>
-              {user.email?.[0]?.toUpperCase() || '👤'}
+              {user.fullName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '👤'}
             </div>
+            <span style={{fontSize:'0.88rem', fontWeight:600, color:'#555'}}>
+              {user.fullName || user.email?.split('@')[0]}
+            </span>
           </Link>
           <button className="nav-logout-btn" onClick={handleLogout}>יציאה</button>
         </>}

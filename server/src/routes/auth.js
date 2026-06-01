@@ -6,18 +6,18 @@ const { pool } = require('../db/db');
 const router = express.Router();
 
 router.post('/register', async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, fullName } = req.body;
   if (!['Customer', 'Provider'].includes(role))
     return res.status(400).json({ message: 'Invalid role' });
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO Users (Email, PasswordHash, Role) VALUES ($1, $2, $3) RETURNING Id, Role',
-      [email, hash, role]
+      'INSERT INTO Users (Email, PasswordHash, Role, FullName) VALUES ($1, $2, $3, $4) RETURNING Id, Role, FullName',
+      [email, hash, role, fullName || null]
     );
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, role: user.role });
+    res.status(201).json({ token, role: user.role, fullName: user.fullname });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ message: 'Email already exists' });
     res.status(500).json({ message: err.message });
@@ -32,7 +32,7 @@ router.post('/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.passwordhash)))
       return res.status(401).json({ message: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, role: user.role });
+    res.json({ token, role: user.role, fullName: user.fullname || null, email: user.email });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

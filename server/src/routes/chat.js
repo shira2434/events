@@ -43,16 +43,23 @@ router.get('/', authMiddleware, async (req, res) => {
       SELECT DISTINCT
         CASE WHEN SenderId = $1 THEN ReceiverId ELSE SenderId END AS "OtherUserId",
         u.Email,
+        u.FullName,
+        pp.BusinessName,
         (SELECT COUNT(*) FROM ChatMessages
          WHERE ReceiverId = $1
          AND SenderId = CASE WHEN cm.SenderId = $1 THEN cm.ReceiverId ELSE cm.SenderId END
          AND IsRead = false) AS "UnreadCount"
       FROM ChatMessages cm
       JOIN Users u ON u.Id = CASE WHEN SenderId = $1 THEN ReceiverId ELSE SenderId END
+      LEFT JOIN ProviderProfiles pp ON pp.UserId = u.Id
       WHERE SenderId = $1 OR ReceiverId = $1
     `, [req.user.id]);
     res.json(result.rows.map(r => ({
-      OtherUserId: r.OtherUserId, Email: r.Email, UnreadCount: parseInt(r.UnreadCount) || 0
+      OtherUserId: r.OtherUserId,
+      Email: r.Email,
+      FullName: r.fullname || null,
+      BusinessName: r.businessname || null,
+      UnreadCount: parseInt(r.UnreadCount) || 0
     })));
   } catch (err) {
     res.status(500).json({ message: err.message });
