@@ -160,7 +160,7 @@ export default function AdminPage() {
   };
 
   const saveCategory = async (cat) => {
-    await api.put(`/admin/categories/${cat.Id}`, { name: cat.Name, icon: cat.Icon });
+    await api.put(`/admin/categories/${cat.Id}`, { name: cat.Name, icon: cat.Icon, bannerUrl: cat.BannerUrl });
     setEditCat(null);
     refreshCategories();
   };
@@ -436,12 +436,24 @@ export default function AdminPage() {
               {categories.map(cat => (
                 <div key={cat.Id} className="admin-cat-row">
                   {editCat?.Id === cat.Id ? (
-                    <>
-                      <input className="admin-cat-icon-input" value={editCat.Icon} onChange={e => setEditCat({...editCat, Icon: e.target.value})} maxLength={4} />
-                      <input className="admin-cat-name-input" value={editCat.Name} onChange={e => setEditCat({...editCat, Name: e.target.value})} />
-                      <button className="admin-save-btn" onClick={() => saveCategory(editCat)}>✓</button>
-                      <button className="admin-cancel-btn" onClick={() => setEditCat(null)}>✕</button>
-                    </>
+                    <div style={{flex:1, display:'flex', flexDirection:'column', gap:'0.4rem'}}>
+                      <div style={{display:'flex', gap:'0.5rem', alignItems:'center'}}>
+                        <input className="admin-cat-icon-input" value={editCat.Icon} onChange={e => setEditCat({...editCat, Icon: e.target.value})} maxLength={4} />
+                        <input className="admin-cat-name-input" style={{flex:1}} value={editCat.Name} onChange={e => setEditCat({...editCat, Name: e.target.value})} />
+                        <button className="admin-save-btn" onClick={() => saveCategory(editCat)}>✓</button>
+                        <button className="admin-cancel-btn" onClick={() => setEditCat(null)}>✕</button>
+                      </div>
+                      <input
+                        className="admin-cat-name-input"
+                        style={{width:'100%', fontSize:'0.78rem'}}
+                        placeholder="🔗 קישור לתמונת באנר..."
+                        value={editCat.BannerUrl || ''}
+                        onChange={e => setEditCat({...editCat, BannerUrl: e.target.value})}
+                      />
+                      {editCat.BannerUrl && (
+                        <img src={editCat.BannerUrl} alt="" style={{width:'100%', height:60, objectFit:'cover', borderRadius:8, marginTop:2}} />
+                      )}
+                    </div>
                   ) : (
                     <>
                       <span className="admin-cat-icon">{cat.Icon}</span>

@@ -4,6 +4,16 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
+// Public categories
+router.get('/categories/all', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT name, icon, banner_url FROM categories ORDER BY sortorder, id');
+    res.json(result.rows.map(r => ({ Name: r.name, Icon: r.icon, BannerUrl: r.banner_url })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM ProviderProfiles WHERE UserId = $1', [req.user.id]);

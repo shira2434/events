@@ -142,7 +142,7 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
 router.get('/categories', authMiddleware, adminOnly, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY sortorder, id');
-    res.json(result.rows.map(r => ({ Id: r.id, Name: r.name, Icon: r.icon, SortOrder: r.sortorder })));
+    res.json(result.rows.map(r => ({ Id: r.id, Name: r.name, Icon: r.icon, SortOrder: r.sortorder, BannerUrl: r.banner_url })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -176,9 +176,9 @@ router.delete('/categories/:id', authMiddleware, adminOnly, async (req, res) => 
 
 // Update category
 router.put('/categories/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, icon } = req.body;
+  const { name, icon, bannerUrl } = req.body;
   try {
-    await pool.query('UPDATE categories SET name=$1, icon=$2 WHERE id=$3', [name, icon, req.params.id]);
+    await pool.query('UPDATE categories SET name=$1, icon=$2, banner_url=$3 WHERE id=$4', [name, icon, bannerUrl || null, req.params.id]);
     res.json({ message: 'Updated' });
   } catch (err) {
     res.status(500).json({ message: err.message });

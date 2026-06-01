@@ -165,13 +165,21 @@ export default function ProviderPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [provider, setProvider] = useState(null);
+  const [categories, setCategories] = useState({});
   const [review, setReview] = useState({ rating: 5, comment: '' });
   const [lightbox, setLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('portfolio');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { api.get(`/providers/${id}`).then(r => setProvider(r.data)); }, [id]);
+  useEffect(() => {
+    api.get(`/providers/${id}`).then(r => setProvider(r.data));
+    api.get('/providers/categories/all').then(r => {
+      const map = {};
+      r.data.forEach(c => { map[c.Name] = c; });
+      setCategories(map);
+    }).catch(() => {});
+  }, [id]);
 
   const sendMessage = async () => {
     if (!user) return navigate('/login');
@@ -200,8 +208,8 @@ export default function ProviderPage() {
     </div>
   );
 
-  const icon = CATEGORY_ICON[provider.Category] || '🎉';
-  const bannerImg = CATEGORY_BANNER[provider.Category];
+  const icon = (categories[provider.Category]?.Icon) || CATEGORY_ICON[provider.Category] || '🎉';
+  const bannerImg = categories[provider.Category]?.BannerUrl || CATEGORY_BANNER[provider.Category];
   const portfolioItems = provider.portfolio?.length > 0 ? provider.portfolio : getDemoPortfolio(provider);
   const allImages = portfolioItems.map(m =>
     m.isDemo ? m.FilePath : (m.FilePath.startsWith('http') ? m.FilePath : `http://localhost:5000${m.FilePath}`)
