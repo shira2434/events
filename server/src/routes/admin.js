@@ -70,11 +70,18 @@ router.get('/providers/:id/images', authMiddleware, adminOnly, async (req, res) 
   }
 });
 
-// Upload image for provider
+// Upload image for provider (file or URL)
 router.post('/providers/:id/images', authMiddleware, adminOnly, upload.single('image'), async (req, res) => {
   try {
-    const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    await pool.query('INSERT INTO PortfolioMedia (ProviderId, FilePath) VALUES ($1, $2)', [req.params.id, dataUrl]);
+    let filePath;
+    if (req.file) {
+      filePath = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    } else if (req.body.url) {
+      filePath = req.body.url;
+    } else {
+      return res.status(400).json({ message: 'No image provided' });
+    }
+    await pool.query('INSERT INTO PortfolioMedia (ProviderId, FilePath) VALUES ($1, $2)', [req.params.id, filePath]);
     res.status(201).json({ message: 'Uploaded' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -126,6 +133,53 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
       messages: parseInt(messages.rows[0].count),
       reviews: parseInt(reviews.rows[0].count),
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get categories
+router.get('/categories', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM categories ORDER BY sortorder, id');
+    res.json(result.rows.map(r => ({ Id: r.id, Name: r.name, Icon: r.icon, SortOrder: r.sortorder })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Add category
+router.post('/categories', authMiddleware, adminOnly, async (req, res) => {
+  const { name, icon } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO categories (name, icon) VALUES ($1, $2) RETURNING *',
+      [name, icon || '🏷️']
+    );
+    const r = result.rows[0];
+    res.status(201).json({ Id: r.id, Name: r.name, Icon: r.icon });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ message: 'קטגוריה כבר קיימת' });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Delete category
+router.delete('/categories/:id', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update category
+router.put('/categories/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, icon } = req.body;
+  try {
+    await pool.query('UPDATE categories SET name=$1, icon=$2 WHERE id=$3', [name, icon, req.params.id]);
+    res.json({ message: 'Updated' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

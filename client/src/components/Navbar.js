@@ -62,6 +62,9 @@ export default function Navbar() {
         </>}
 
         {user && <>
+          {user.role === 'Admin' && (
+            <Link to="/admin" className={`nav-icon-link ${isActive('/admin') ? 'nav-active' : ''}`}>🛡️ ניהול</Link>
+          )}
           {user.role === 'Provider' && (
             <Link to="/dashboard" className={`nav-icon-link ${isActive('/dashboard') ? 'nav-active' : ''}`}>⚙️ לוח בקרה</Link>
           )}

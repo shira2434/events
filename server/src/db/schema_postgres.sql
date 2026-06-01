@@ -44,3 +44,15 @@ CREATE TABLE IF NOT EXISTS Reviews (
   Comment TEXT,
   CreatedAt TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS Categories (
+  Id SERIAL PRIMARY KEY,
+  Name VARCHAR(100) UNIQUE NOT NULL,
+  Icon VARCHAR(10) DEFAULT '🏷️',
+  SortOrder INT DEFAULT 0
+);
+
+INSERT INTO Categories (Name, Icon, SortOrder) VALUES
+('צלם','📷',1),('מאפרת','💄',2),('קייטרינג','🍽️',3),('DJ','🎧',4),
+('פרחים','💐',5),('אולם','🏛️',6),('תכשיטים','💍',7),('הסעות','🚗',8),('עוגות','🎂',9)
+ON CONFLICT (Name) DO NOTHING;
