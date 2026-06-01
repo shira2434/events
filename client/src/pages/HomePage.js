@@ -221,8 +221,7 @@ export default function HomePage() {
     localStorage.setItem('favorites', JSON.stringify(next));
   };
 
-  const isNew = (p) => !p.ReviewCount && p.CreatedAt &&
-    (Date.now() - new Date(p.CreatedAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
+  const isNew = (p) => !p.ReviewCount;
 
   return (
     <div>

@@ -44,7 +44,7 @@ router.put('/settings', authMiddleware, async (req, res) => {
 router.get('/', async (req, res) => {
   const { category, minRating, sortBy } = req.query;
   try {
-    let query = `SELECT p.Id, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, p.CreatedAt, u.Email,
+    let query = `SELECT p.Id, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email,
                  (SELECT COUNT(*) FROM Reviews r WHERE r.ProviderId = p.Id) AS ReviewCount
                  FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE 1=1`;
     const params = [];
@@ -52,13 +52,13 @@ router.get('/', async (req, res) => {
     if (minRating) { params.push(parseFloat(minRating)); query += ` AND p.AverageRating >= $${params.length}`; }
     if (sortBy === 'rating') query += ' ORDER BY p.AverageRating DESC';
     else if (sortBy === 'price') query += ' ORDER BY p.PriceFrom ASC NULLS LAST';
-    else if (sortBy === 'new') query += ' ORDER BY p.CreatedAt DESC';
+    else if (sortBy === 'new') query += ' ORDER BY p.Id DESC';
     const result = await pool.query(query, params);
     res.json(result.rows.map(p => ({
       Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category,
       Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
       AverageRating: p.averagerating || 0, Email: p.email,
-      ReviewCount: parseInt(p.reviewcount) || 0, CreatedAt: p.createdat
+      ReviewCount: parseInt(p.reviewcount) || 0
     })));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -71,7 +71,7 @@ router.get('/:id', async (req, res) => {
       pool.query(`SELECT p.Id, p.UserId, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email
                   FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE p.Id = $1`, [req.params.id]),
       pool.query('SELECT FilePath FROM PortfolioMedia WHERE ProviderId = $1 ORDER BY UploadedAt DESC', [req.params.id]),
-      pool.query('SELECT r.Rating, r.Comment, r.CreatedAt, u.Email, u.Name FROM Reviews r JOIN Users u ON r.CustomerId = u.Id WHERE r.ProviderId = $1 ORDER BY r.CreatedAt DESC', [req.params.id]),
+      pool.query('SELECT r.Rating, r.Comment, r.CreatedAt, u.Email, u.FullName AS Name FROM Reviews r JOIN Users u ON r.CustomerId = u.Id WHERE r.ProviderId = $1 ORDER BY r.CreatedAt DESC', [req.params.id]),
     ]);
     if (!profile.rows[0]) return res.status(404).json({ message: 'Provider not found' });
     const p = profile.rows[0];
