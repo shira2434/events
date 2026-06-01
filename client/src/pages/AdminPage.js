@@ -26,6 +26,7 @@ export default function AdminPage() {
   const [addError, setAddError] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [urlError, setUrlError] = useState('');
+  const [providerCover, setProviderCover] = useState({});
   const [newCat, setNewCat] = useState({ Name: '', Icon: '🏷️' });
   const [catError, setCatError] = useState('');
   const [editCat, setEditCat] = useState(null);
@@ -90,6 +91,12 @@ export default function AdminPage() {
   const deleteImage = async (imgId, providerId) => {
     await api.delete(`/admin/images/${imgId}`);
     setImages(prev => ({ ...prev, [providerId]: prev[providerId].filter(i => i.Id !== imgId) }));
+  };
+
+  const setAdminCover = async (providerId, url) => {
+    await api.put(`/admin/providers/${providerId}/cover`, { coverImage: url });
+    setProviderCover(prev => ({ ...prev, [providerId]: url }));
+    setProviders(prev => prev.map(p => p.Id === providerId ? { ...p, CoverImage: url } : p));
   };
 
   const saveProvider = async (e) => {
@@ -397,6 +404,32 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
+
+              {/* Cover Image Picker */}
+              {(images[editProvider.Id] || []).length > 0 && (
+                <div className="admin-images-section">
+                  <div className="admin-images-header">
+                    <h4>🌟 תמונת פתיחה</h4>
+                  </div>
+                  <div className="cover-picker-grid">
+                    {(images[editProvider.Id] || []).map(img => {
+                      const src = img.FilePath.startsWith('data:') || img.FilePath.startsWith('http') ? img.FilePath : `https://events-szpi.onrender.com${img.FilePath}`;
+                      const currentCover = providerCover[editProvider.Id] ?? editProvider.CoverImage;
+                      const isSelected = currentCover === src;
+                      return (
+                        <div
+                          key={img.Id}
+                          className={`cover-picker-item ${isSelected ? 'selected' : ''}`}
+                          onClick={() => setAdminCover(editProvider.Id, isSelected ? null : src)}
+                        >
+                          <img src={src} alt="" />
+                          {isSelected && <div className="cover-picker-check">✓ פעיל</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

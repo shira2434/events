@@ -11,6 +11,17 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
+// Set cover image for provider
+router.put('/providers/:id/cover', authMiddleware, adminOnly, async (req, res) => {
+  const { coverImage } = req.body;
+  try {
+    await pool.query('UPDATE ProviderProfiles SET CoverImage = $1 WHERE Id = $2', [coverImage || null, req.params.id]);
+    res.json({ message: 'Cover updated' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Get all providers
 router.get('/providers', authMiddleware, adminOnly, async (req, res) => {
   try {
@@ -26,7 +37,7 @@ router.get('/providers', authMiddleware, adminOnly, async (req, res) => {
       Category: p.category, Description: p.description,
       WorkArea: p.workarea, PriceFrom: p.pricefrom,
       AverageRating: p.averagerating, Email: p.email,
-      ImageCount: parseInt(p.imagecount)
+      ImageCount: parseInt(p.imagecount), CoverImage: p.coverimage || null
     })));
   } catch (err) {
     res.status(500).json({ message: err.message });
