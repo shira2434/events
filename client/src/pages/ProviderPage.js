@@ -222,7 +222,8 @@ export default function ProviderPage() {
   const allImages = portfolioItems.map(m =>
     m.isDemo ? m.FilePath : (m.FilePath.startsWith('http') ? m.FilePath : `http://localhost:5000${m.FilePath}`)
   );
-  const avatarImg = allImages[0];
+  // תמונת פתיחה: CoverImage > תמונה ראשונה מהפורטפוליו
+  const avatarImg = provider.CoverImage || allImages[0];
 
   const shareProvider = () => {
     const url = window.location.href;

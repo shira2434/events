@@ -16,20 +16,42 @@ export default function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [isNew, setIsNew] = useState(false);
+  const [portfolioImages, setPortfolioImages] = useState([]);
+  const [coverImage, setCoverImage] = useState(null);
   const fileInputRef = useRef();
+
+  const loadPortfolio = async (providerId) => {
+    const r = await api.get(`/providers/${providerId}`);
+    setPortfolioImages(r.data.portfolio?.map(m =>
+      m.FilePath.startsWith('http') ? m.FilePath : `${window.location.origin}${m.FilePath}`
+    ) || []);
+    setCoverImage(r.data.CoverImage || null);
+  };
 
   useEffect(() => {
     api.get('/providers/me').then(r => {
-      if (r.data) setSettings({
-        businessName: r.data.BusinessName || '',
-        category: r.data.Category || '',
-        description: r.data.Description || '',
-        workArea: r.data.WorkArea || '',
-        priceFrom: r.data.PriceFrom || '',
-      });
+      if (r.data) {
+        setSettings({
+          businessName: r.data.BusinessName || '',
+          category: r.data.Category || '',
+          description: r.data.Description || '',
+          workArea: r.data.WorkArea || '',
+          priceFrom: r.data.PriceFrom || '',
+        });
+        setCoverImage(r.data.CoverImage || null);
+        loadPortfolio(r.data.Id);
+      }
     }).catch(() => setIsNew(true));
     return () => previews.forEach(URL.revokeObjectURL); // eslint-disable-line react-hooks/exhaustive-deps
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setCover = async (url) => {
+    try {
+      await api.put('/providers/cover', { coverImage: url });
+      setCoverImage(url);
+      toast('תמונת הפתיחה עודכנה ✅');
+    } catch { toast('שגיאה בעדכון תמונת פתיחה', 'error'); }
+  };
 
   const handleFiles = (newFiles) => {
     const arr = Array.from(newFiles);
@@ -58,6 +80,8 @@ export default function DashboardPage() {
       setFiles([]);
       setPreviews([]);
       toast(`הועלו ${files.length} תמונות בהצלחה 🎉`);
+      const me = await api.get('/providers/me');
+      if (me.data?.Id) loadPortfolio(me.data.Id);
     } catch { toast('שגיאה בהעלאה', 'error'); }
     setUploading(false);
   };
@@ -151,6 +175,30 @@ export default function DashboardPage() {
           </form>
         )}
       </section>
+
+      {!isNew && portfolioImages.length > 0 && (
+        <section className="dashboard-section">
+          <h2>🌟 תמונת פתיחה</h2>
+          <p style={{color:'#888', fontSize:'0.9rem', marginBottom:'1rem'}}>בחר איזו תמונה תופיע ראשונה בכרטיס ובדף הפרופיל שלך</p>
+          <div className="cover-picker-grid">
+            {portfolioImages.map((url, i) => (
+              <div
+                key={i}
+                className={`cover-picker-item ${coverImage === url ? 'selected' : ''}`}
+                onClick={() => setCover(url)}
+              >
+                <img src={url} alt="" />
+                {coverImage === url && <div className="cover-picker-check">✓ פעיל</div>}
+              </div>
+            ))}
+          </div>
+          {coverImage && (
+            <button className="clear-filters" style={{marginTop:'0.75rem'}} onClick={() => setCover(null)}>
+              הסר תמונת פתיחה ✕
+            </button>
+          )}
+        </section>
+      )}
     </div>
   );
 }

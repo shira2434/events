@@ -194,6 +194,7 @@ export default function HomePage() {
   const allCats = [{ Name: 'הכל', Icon: '✨' }, ...categories];
   const getIcon = (cat) => catMap[cat]?.Icon || CATEGORY_ICON[cat] || '🎉';
   const getCardImage = (p) => {
+    if (p.CoverImage) return p.CoverImage;
     if (catMap[p.Category]?.BannerUrl) return catMap[p.Category].BannerUrl;
     const imgs = CATEGORY_IMAGES[p.Category];
     return imgs ? imgs[p.Id % imgs.length] : null;

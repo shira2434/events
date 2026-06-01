@@ -19,7 +19,18 @@ router.get('/me', authMiddleware, async (req, res) => {
     const result = await pool.query('SELECT * FROM ProviderProfiles WHERE UserId = $1', [req.user.id]);
     if (!result.rows[0]) return res.status(404).json({ message: 'Not found' });
     const p = result.rows[0];
-    res.json({ Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category, Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom, AverageRating: p.averagerating });
+    res.json({ Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category, Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom, AverageRating: p.averagerating, CoverImage: p.coverimage || null });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/cover', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'Provider') return res.status(403).json({ message: 'Forbidden' });
+  const { coverImage } = req.body;
+  try {
+    await pool.query('UPDATE ProviderProfiles SET CoverImage = $1 WHERE UserId = $2', [coverImage || null, req.user.id]);
+    res.json({ message: 'Cover updated' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -44,7 +55,7 @@ router.put('/settings', authMiddleware, async (req, res) => {
 router.get('/', async (req, res) => {
   const { category, minRating, sortBy } = req.query;
   try {
-    let query = `SELECT p.Id, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email,
+    let query = `SELECT p.Id, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, p.CoverImage, u.Email,
                  (SELECT COUNT(*) FROM Reviews r WHERE r.ProviderId = p.Id) AS ReviewCount
                  FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE 1=1`;
     const params = [];
@@ -58,7 +69,7 @@ router.get('/', async (req, res) => {
       Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category,
       Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
       AverageRating: p.averagerating || 0, Email: p.email,
-      ReviewCount: parseInt(p.reviewcount) || 0
+      ReviewCount: parseInt(p.reviewcount) || 0, CoverImage: p.coverimage || null
     })));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -68,7 +79,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const [profile, media, reviews] = await Promise.all([
-      pool.query(`SELECT p.Id, p.UserId, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, u.Email
+      pool.query(`SELECT p.Id, p.UserId, p.BusinessName, p.Category, p.Description, p.WorkArea, p.PriceFrom, p.AverageRating, p.CoverImage, u.Email
                   FROM ProviderProfiles p JOIN Users u ON p.UserId = u.Id WHERE p.Id = $1`, [req.params.id]),
       pool.query('SELECT FilePath FROM PortfolioMedia WHERE ProviderId = $1 ORDER BY UploadedAt DESC', [req.params.id]),
       pool.query('SELECT r.Rating, r.Comment, r.CreatedAt, u.Email, u.FullName AS Name FROM Reviews r JOIN Users u ON r.CustomerId = u.Id WHERE r.ProviderId = $1 ORDER BY r.CreatedAt DESC', [req.params.id]),
@@ -78,7 +89,7 @@ router.get('/:id', async (req, res) => {
     res.json({
       Id: p.id, UserId: p.userid, BusinessName: p.businessname, Category: p.category,
       Description: p.description, WorkArea: p.workarea, PriceFrom: p.pricefrom,
-      AverageRating: p.averagerating || 0, Email: p.email,
+      AverageRating: p.averagerating || 0, Email: p.email, CoverImage: p.coverimage || null,
       portfolio: media.rows.map(r => ({ FilePath: r.filepath })),
       reviews: reviews.rows.map(r => ({ Rating: r.rating, Comment: r.comment, Email: r.email, Name: r.name, CreatedAt: r.createdat }))
     });
