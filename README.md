@@ -2,8 +2,8 @@
 
 
 (האתר בפיתוח)
-
-https://events-production-6780.up.railway.app/   קישור:
+[
+https://events-production-6780.up.railway.app/ ](https://events-szpi.onrender.com/login)  קישור:
 
 
 
