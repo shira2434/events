@@ -160,11 +160,23 @@ export default function AdminPage() {
     e.preventDefault();
     setCatError('');
     try {
-      const r = await api.post('/admin/categories', newCat);
-      setCategories(prev => [...prev, r.data]);
+      // תיקון: שליחת מפתחות באותיות קטנות לטובת השרת
+      const payload = {
+        name: newCat.Name,
+        icon: newCat.Icon
+      };
+
+      const r = await api.post('/admin/categories', payload);
+      
+      // התאמת מבנה האובייקט שחוזר מהשרת למבנה ה-Frontend באותיות גדולות
+      const addedCategory = r.data.Id 
+        ? r.data 
+        : { Id: r.data.id, Name: r.data.name, Icon: r.data.icon };
+
+      setCategories(prev => [...prev, addedCategory]);
       setNewCat({ Name: '', Icon: '🏷️' });
     } catch (err) {
-      setCatError(err.response?.data?.message || 'שגיאה');
+      setCatError(err.response?.data?.message || 'שגיאה ביצירת הקטגוריה');
     }
   };
 
