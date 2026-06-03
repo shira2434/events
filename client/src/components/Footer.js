@@ -33,7 +33,7 @@ export default function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <p>© 2024 EventPro. כל הזכויות שמורות.</p>
+        <p>© Shira Merenstein - shirameren2434@gmail.com. כל הזכויות שמורות.</p>
         <div className="footer-social">
           <span role="img" aria-label="Facebook">📘</span>
           <span role="img" aria-label="Instagram">📸</span>
