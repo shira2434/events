@@ -186,11 +186,24 @@ npm start
 
 ### דיאגרמת יחסים
 ```
-Users ──< ProviderProfiles ──< PortfolioMedia
-  │              │
-  │              └──< Reviews >── Users
-  │
-  └──< ChatMessages >── Users
+┌─────────────┐       ┌──────────────────┐       ┌─────────────────┐
+│    Users    │       │ ProviderProfiles │       │  PortfolioMedia │
+│─────────────│       │──────────────────│       │─────────────────│
+│ UserID (PK) │──1────│ UserID (FK)      │──1────│ ProfileID (FK)  │
+│ Role        │       │ ProfileID (PK)   │       │ MediaID (PK)    │
+│ FullName    │       │ CoverImage       │       │ ImageURL        │
+└──────┬──────┘       └────────┬─────────┘       └─────────────────┘
+       │                       │
+       │ 1                     │ 1
+       │                       │
+       ▼ N                     ▼ N
+┌──────────────┐       ┌───────────────┐       ┌─────────────────┐
+│ ChatMessages │       │    Reviews    │       │   Categories    │
+│──────────────│       │───────────────│       │─────────────────│
+│ MessageID(PK)│       │ ReviewID (PK) │       │ CategoryID (PK) │
+│ SenderID(FK) │       │ ProfileID(FK) │       │ Name            │
+│ ReceiverID(FK│       │ UserID (FK)   │       │ banner_url      │
+└──────────────┘       └───────────────┘       └─────────────────┘
 ```
 
 ---
