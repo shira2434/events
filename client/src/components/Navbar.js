@@ -35,11 +35,16 @@ export default function Navbar() {
       if (total > prevUnread.current) playNotif();
       prevUnread.current = total;
       setUnread(total);
-    }).catch(() => {});
+    }).catch(err => {
+      if (err.response?.status === 401) {
+        logout();
+        navigate('/');
+      }
+    });
     check();
-    const interval = setInterval(check, 3000);
+    const interval = setInterval(check, 10000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user]); // eslint-disable-line
 
   const handleLogout = () => { logout(); navigate('/'); };
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
