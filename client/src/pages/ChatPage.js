@@ -123,11 +123,16 @@ export default function ChatPage() {
     const content = replyTo
       ? `__REPLY__${replyTo.id}__${replyTo.preview}__END__${text}`
       : text;
-    const { data } = await api.post('/chat', { receiverId: +targetId, content });
-    setMessages(prev => [...prev, data]);
-    setText('');
-    setReplyTo(null);
-    loadConversations();
+    try {
+      const { data } = await api.post('/chat', { receiverId: +targetId, content });
+      setMessages(prev => [...prev, data]);
+      setText('');
+      setReplyTo(null);
+      loadConversations();
+    } catch (err) {
+      console.error('שגיאה בשליחת הודעה:', err.response?.data || err.message);
+      alert('שגיאה בשליחת ההודעה: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const sendImage = async (e) => {
@@ -136,9 +141,14 @@ export default function ChatPage() {
     const formData = new FormData();
     formData.append('image', file);
     formData.append('receiverId', targetId);
-    const { data } = await api.post('/chat/image', formData);
-    setMessages(prev => [...prev, data]);
-    loadConversations();
+    try {
+      const { data } = await api.post('/chat/image', formData);
+      setMessages(prev => [...prev, data]);
+      loadConversations();
+    } catch (err) {
+      console.error('שגיאה בשליחת תמונה:', err.response?.data || err.message);
+      alert('שגיאה בשליחת התמונה: ' + (err.response?.data?.message || err.message));
+    }
     e.target.value = '';
   };
 
