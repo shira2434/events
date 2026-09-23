@@ -1,55 +1,55 @@
 # EventPro 🎉
-**מרקטפלייס לאירועים בישראל** — פלטפורמה לחיבור בין לקוחות לספקי אירועים מקצועיים.
+**Event Marketplace in Israel** — A platform connecting customers with professional event vendors.
 
-🔗 **אתר חי:** https://events-szpi.onrender.com
+🔗 **Live site:** https://events-szpi.onrender.com
 
 ---
 
-## תוכן עניינים
-- [סקירה כללית](#סקירה-כללית)
-- [טכנולוגיות](#טכנולוגיות)
-- [מבנה הפרויקט](#מבנה-הפרויקט)
-- [התקנה והרצה מקומית](#התקנה-והרצה-מקומית)
-- [משתני סביבה](#משתני-סביבה)
-- [מסד הנתונים](#מסד-הנתונים)
+## Table of Contents
+- [Overview](#overview)
+- [Technologies](#technologies)
+- [Project Structure](#project-structure)
+- [Local Setup](#local-setup)
+- [Environment Variables](#environment-variables)
+- [Database](#database)
 - [API Reference](#api-reference)
-- [תפקידי משתמשים](#תפקידי-משתמשים)
-- [פיצ'רים עיקריים](#פיצ'רים-עיקריים)
+- [User Roles](#user-roles)
+- [Key Features](#key-features)
 - [Deploy](#deploy)
 
 ---
 
-## סקירה כללית
+## Overview
 
-EventPro מאפשרת למשתמשים למצוא ספקי אירועים (צלמים, מאפרות, קייטרינג, DJ ועוד), לצפות בתיק העבודות שלהם, לקרוא ולכתוב ביקורות, וליצור איתם קשר דרך מערכת צ'אט מובנית.
+EventPro allows users to find event vendors (photographers, makeup artists, catering, DJs, etc.), view their portfolios, read and write reviews, and contact them through a built-in chat system.
 
 ---
 
-## טכנולוגיות
+## Technologies
 
 ### Frontend
-| טכנולוגיה | שימוש |
+| Technology | Usage |
 |---|---|
 | React 19 | UI |
-| React Router v7 | ניתוב |
-| Axios | קריאות API |
+| React Router v7 | Routing |
+| Axios | API calls |
 | react-helmet-async | SEO / meta tags |
 
 ### Backend
-| טכנולוגיה | שימוש |
+| Technology | Usage |
 |---|---|
-| Node.js + Express 5 | שרת |
-| PostgreSQL (pg) | מסד נתונים |
-| JWT (jsonwebtoken) | אימות |
-| bcryptjs | הצפנת סיסמאות |
-| multer | העלאת קבצים |
-| express-rate-limit | הגנה מ-spam |
-| helmet | אבטחת headers |
-| compression | דחיסת תגובות |
+| Node.js + Express 5 | Server |
+| PostgreSQL (pg) | Database |
+| JWT (jsonwebtoken) | Authentication |
+| bcryptjs | Password hashing |
+| multer | File uploads |
+| express-rate-limit | Spam protection |
+| helmet | Header security |
+| compression | Response compression |
 
 ---
 
-## מבנה הפרויקט
+## Project Structure
 
 ```
 events/
@@ -59,19 +59,19 @@ events/
 │       │   ├── Navbar.js
 │       │   ├── Footer.js
 │       │   ├── ChatBot.js
-│       │   ├── Toast.js          # מערכת הודעות
+│       │   ├── Toast.js          # Notification system
 │       │   ├── ErrorBoundary.js
 │       │   └── ScrollToTopButton.js
 │       ├── context/
 │       │   ├── AuthContext.js
 │       │   └── CategoriesContext.js
 │       ├── pages/
-│       │   ├── HomePage.js       # רשימת ספקים + סינון + מיון
-│       │   ├── ProviderPage.js   # פרופיל ספק + תיק עבודות + ביקורות
-│       │   ├── DashboardPage.js  # לוח בקרה לספק
-│       │   ├── ChatPage.js       # מערכת צ'אט
-│       │   ├── AdminPage.js      # לוח ניהול
-│       │   ├── FavoritesPage.js  # ספקים מועדפים
+│       │   ├── HomePage.js       # Vendor list + filters + sorting
+│       │   ├── ProviderPage.js   # Vendor profile + portfolio + reviews
+│       │   ├── DashboardPage.js  # Vendor dashboard
+│       │   ├── ChatPage.js       # Chat system
+│       │   ├── AdminPage.js      # Admin panel
+│       │   ├── FavoritesPage.js  # Saved vendors
 │       │   ├── AuthPage.js
 │       │   ├── ProfilePage.js
 │       │   ├── AboutPage.js
@@ -96,25 +96,25 @@ events/
 
 ---
 
-## התקנה והרצה מקומית
+## Local Setup
 
-### דרישות מוקדמות
+### Prerequisites
 - Node.js 18+
 - PostgreSQL 14+
 
-### 1. שכפל את הפרויקט
+### 1. Clone the project
 ```bash
 git clone https://github.com/shira2434/events.git
 cd events
 ```
 
-### 2. הגדר את השרת
+### 2. Set up the server
 ```bash
 cd server
 npm install
 ```
 
-צור קובץ `server/.env`:
+Create `server/.env`:
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -125,66 +125,65 @@ JWT_SECRET=any_random_secret_string
 PORT=5000
 ```
 
-### 3. הגדר את מסד הנתונים
+### 3. Set up the database
 ```bash
-# צור את ה-DB וייבא את הסכמה
 psql -U postgres -c "CREATE DATABASE eventprodb;"
 psql -U postgres -d eventprodb -f src/db/schema_postgres.sql
 ```
 
-הוסף עמודה לתמונת פתיחה (אם לא קיימת):
+Add missing columns if needed:
 ```sql
 ALTER TABLE ProviderProfiles ADD COLUMN IF NOT EXISTS CoverImage TEXT;
 ALTER TABLE Users ADD COLUMN IF NOT EXISTS FullName VARCHAR(255);
 ```
 
-### 4. הפעל את השרת
+### 4. Start the server
 ```bash
-npm run dev   # עם nodemon
-# או
-npm start     # ללא nodemon
+npm run dev   # with nodemon
+# or
+npm start     # without nodemon
 ```
 
-### 5. הגדר את ה-Client
+### 5. Set up the client
 ```bash
 cd ../client
 npm install
 npm start
 ```
 
-האתר יעלה על `http://localhost:3000`
+The app will run at `http://localhost:3000`
 
 ---
 
-## משתני סביבה
+## Environment Variables
 
-| משתנה | תיאור | דוגמה |
+| Variable | Description | Example |
 |---|---|---|
-| `DB_HOST` | כתובת שרת ה-DB | `localhost` |
-| `DB_PORT` | פורט PostgreSQL | `5432` |
-| `DB_NAME` | שם מסד הנתונים | `eventprodb` |
-| `DB_USER` | משתמש DB | `postgres` |
-| `DB_PASSWORD` | סיסמת DB | `secret` |
-| `JWT_SECRET` | מפתח להצפנת טוקנים | `my_secret_key` |
-| `PORT` | פורט השרת | `5000` |
-| `NODE_ENV` | סביבת הרצה | `production` |
+| `DB_HOST` | Database server address | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_NAME` | Database name | `eventprodb` |
+| `DB_USER` | Database user | `postgres` |
+| `DB_PASSWORD` | Database password | `secret` |
+| `JWT_SECRET` | Token signing secret | `my_secret_key` |
+| `PORT` | Server port | `5000` |
+| `NODE_ENV` | Runtime environment | `production` |
 
 ---
 
-## מסד הנתונים
+## Database
 
-### טבלאות
+### Tables
 
-| טבלה | תיאור |
+| Table | Description |
 |---|---|
-| `Users` | משתמשים (Customer / Provider / Admin) |
-| `ProviderProfiles` | פרופילי ספקים |
-| `PortfolioMedia` | תמונות תיק עבודות |
-| `ChatMessages` | הודעות צ'אט |
-| `Reviews` | ביקורות |
-| `Categories` | קטגוריות ספקים |
+| `Users` | Users (Customer / Provider / Admin) |
+| `ProviderProfiles` | Vendor profiles |
+| `PortfolioMedia` | Portfolio images |
+| `ChatMessages` | Chat messages |
+| `Reviews` | Reviews |
+| `Categories` | Vendor categories |
 
-### דיאגרמת יחסים
+### Relationship Diagram
 ```
 ┌─────────────┐       ┌──────────────────┐       ┌─────────────────┐
 │    Users    │       │ ProviderProfiles │       │  PortfolioMedia │
@@ -211,106 +210,106 @@ npm start
 ## API Reference
 
 ### Auth
-| Method | Endpoint | תיאור | Auth |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| POST | `/api/auth/register` | הרשמה | ❌ |
-| POST | `/api/auth/login` | התחברות | ❌ |
-| PUT | `/api/auth/password` | שינוי סיסמה | ✅ |
+| POST | `/api/auth/register` | Register | ❌ |
+| POST | `/api/auth/login` | Login | ❌ |
+| PUT | `/api/auth/password` | Change password | ✅ |
 
 ### Providers
-| Method | Endpoint | תיאור | Auth |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| GET | `/api/providers` | רשימת ספקים (עם פילטרים) | ❌ |
-| GET | `/api/providers/:id` | פרופיל ספק מלא | ❌ |
-| GET | `/api/providers/me` | פרופיל הספק המחובר | Provider |
-| PUT | `/api/providers/settings` | עדכון פרטי ספק | Provider |
-| PUT | `/api/providers/cover` | עדכון תמונת פתיחה | Provider |
-| POST | `/api/providers/:id/reviews` | הוספת ביקורת | Customer |
+| GET | `/api/providers` | List vendors (with filters) | ❌ |
+| GET | `/api/providers/:id` | Full vendor profile | ❌ |
+| GET | `/api/providers/me` | Logged-in vendor profile | Provider |
+| PUT | `/api/providers/settings` | Update vendor details | Provider |
+| PUT | `/api/providers/cover` | Update cover image | Provider |
+| POST | `/api/providers/:id/reviews` | Add review | Customer |
 
-**Query params ל-GET /providers:**
-- `category` — סינון לפי קטגוריה
-- `minRating` — סינון לפי דירוג מינימלי
+**Query params for GET /providers:**
+- `category` — filter by category
+- `minRating` — filter by minimum rating
 - `sortBy` — `rating` / `price` / `new`
 
 ### Portfolio
-| Method | Endpoint | תיאור | Auth |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| POST | `/api/portfolio` | העלאת תמונות | Provider |
+| POST | `/api/portfolio` | Upload images | Provider |
 
 ### Chat
-| Method | Endpoint | תיאור | Auth |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| GET | `/api/chat` | רשימת שיחות | ✅ |
-| GET | `/api/chat/:targetId` | היסטוריית שיחה | ✅ |
-| POST | `/api/chat` | שליחת הודעה | ✅ |
-| POST | `/api/chat/image` | שליחת תמונה | ✅ |
-| DELETE | `/api/chat/:targetId` | מחיקת שיחה | ✅ |
-| POST | `/api/chat/typing` | עדכון סטטוס הקלדה | ✅ |
-| GET | `/api/chat/typing/:targetId` | בדיקת סטטוס הקלדה | ✅ |
+| GET | `/api/chat` | List conversations | ✅ |
+| GET | `/api/chat/:targetId` | Conversation history | ✅ |
+| POST | `/api/chat` | Send message | ✅ |
+| POST | `/api/chat/image` | Send image | ✅ |
+| DELETE | `/api/chat/:targetId` | Delete conversation | ✅ |
+| POST | `/api/chat/typing` | Update typing status | ✅ |
+| GET | `/api/chat/typing/:targetId` | Check typing status | ✅ |
 
 ### Admin
-| Method | Endpoint | תיאור |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/admin/stats` | סטטיסטיקות כלליות |
-| GET | `/api/admin/providers` | כל הספקים |
-| PUT | `/api/admin/providers/:id` | עדכון ספק |
-| PUT | `/api/admin/providers/:id/cover` | עדכון תמונת פתיחה |
-| DELETE | `/api/admin/providers/:id` | מחיקת ספק |
-| GET | `/api/admin/providers/:id/images` | תמונות ספק |
-| POST | `/api/admin/providers/:id/images` | הוספת תמונה לספק |
-| DELETE | `/api/admin/images/:id` | מחיקת תמונה |
-| GET | `/api/admin/users` | כל המשתמשים |
-| DELETE | `/api/admin/users/:id` | מחיקת משתמש |
-| GET | `/api/admin/categories` | קטגוריות |
-| POST | `/api/admin/categories` | הוספת קטגוריה |
-| PUT | `/api/admin/categories/:id` | עדכון קטגוריה |
-| DELETE | `/api/admin/categories/:id` | מחיקת קטגוריה |
+| GET | `/api/admin/stats` | General statistics |
+| GET | `/api/admin/providers` | All vendors |
+| PUT | `/api/admin/providers/:id` | Update vendor |
+| PUT | `/api/admin/providers/:id/cover` | Update cover image |
+| DELETE | `/api/admin/providers/:id` | Delete vendor |
+| GET | `/api/admin/providers/:id/images` | Vendor images |
+| POST | `/api/admin/providers/:id/images` | Add image to vendor |
+| DELETE | `/api/admin/images/:id` | Delete image |
+| GET | `/api/admin/users` | All users |
+| DELETE | `/api/admin/users/:id` | Delete user |
+| GET | `/api/admin/categories` | Categories |
+| POST | `/api/admin/categories` | Add category |
+| PUT | `/api/admin/categories/:id` | Update category |
+| DELETE | `/api/admin/categories/:id` | Delete category |
 
 ---
 
-## תפקידי משתמשים
+## User Roles
 
-| תפקיד | יכולות |
+| Role | Capabilities |
 |---|---|
-| **Guest** | צפייה בספקים, חיפוש וסינון |
-| **Customer** | + כתיבת ביקורות, צ'אט עם ספקים, שמירת מועדפים |
-| **Provider** | + ניהול פרופיל, העלאת תמונות, בחירת תמונת פתיחה |
-| **Admin** | + ניהול כל הספקים, משתמשים, קטגוריות |
+| **Guest** | Browse vendors, search and filter |
+| **Customer** | + Write reviews, chat with vendors, save favorites |
+| **Provider** | + Manage profile, upload images, set cover image |
+| **Admin** | + Manage all vendors, users, and categories |
 
-ליצירת Admin — עדכן ידנית ב-DB:
+To create an Admin — update manually in DB:
 ```sql
 UPDATE Users SET Role = 'Admin' WHERE Email = 'your@email.com';
 ```
 
 ---
 
-## פיצ'רים עיקריים
+## Key Features
 
-- 🔍 **חיפוש וסינון** — לפי קטגוריה, דירוג, מחיר, מיון
-- 🖼️ **תיק עבודות** — העלאת תמונות, בחירת תמונת פתיחה
-- ⭐ **ביקורות** — דירוג כוכבים, תגובות מאומתות
-- 💬 **צ'אט** — הודעות בזמן אמת (polling), אינדיקטור הקלדה, תגובה להודעה, שליחת תמונות
-- ❤️ **מועדפים** — שמירת ספקים מועדפים ב-localStorage
-- 🔗 **שיתוף** — שיתוף דף ספק
-- 🛡️ **לוח ניהול** — ניהול מלא של ספקים, משתמשים וקטגוריות
-- 📱 **Responsive** — תמיכה מלאה במובייל
-- 🔒 **אבטחה** — Rate limiting, helmet, JWT, bcrypt
+- 🔍 **Search & Filter** — by category, rating, price, sorting
+- 🖼️ **Portfolio** — upload images, set cover image
+- ⭐ **Reviews** — star ratings, verified responses
+- 💬 **Chat** — real-time messages (polling), typing indicator, reply to message, send images
+- ❤️ **Favorites** — save vendors to localStorage
+- 🔗 **Share** — share vendor profile page
+- 🛡️ **Admin Panel** — full management of vendors, users, and categories
+- 📱 **Responsive** — full mobile support
+- 🔒 **Security** — Rate limiting, helmet, JWT, bcrypt
 
 ---
 
 ## Deploy
 
-הפרויקט מוגדר ל-deploy על **Render**:
+The project is configured to deploy on **Render**:
 
-- **שרת:** Web Service מהתיקייה `server/`
-- **Client:** build סטטי מוגש על ידי השרת בסביבת production
+- **Server:** Web Service from the `server/` directory
+- **Client:** Static build served by the server in production
 
-### הגדרות Render
+### Render Settings
 - Build Command: `cd server && npm install`
 - Start Command: `node server/src/index.js`
-- משתני סביבה: הגדר את כל ה-`.env` בממשק Render
+- Environment Variables: set all `.env` values in the Render dashboard
 
-### migration נדרש ב-DB לאחר deploy ראשון
+### Required DB migration after first deploy
 ```sql
 ALTER TABLE ProviderProfiles ADD COLUMN IF NOT EXISTS CoverImage TEXT;
 ALTER TABLE Users ADD COLUMN IF NOT EXISTS FullName VARCHAR(255);
